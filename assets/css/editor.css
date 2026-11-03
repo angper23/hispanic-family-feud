@@ -1,0 +1,61 @@
+body.editor { min-height: 100vh; background: radial-gradient(circle at 85% 0%, #3a1460, #1a0b2e 60%) fixed; }
+.papel-wrap { height: 58px; overflow: hidden; }
+.ed-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding: 6px 20px 10px; }
+.ed-head h1 { margin: 0; font: 400 28px var(--font-display); color: var(--sun); }
+.ed-head .sub { margin: 2px 0 0; font-size: 13px; opacity: 0.75; }
+
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 20px;
+  background: rgba(26, 11, 46, 0.94);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(6px);
+}
+.status { margin-left: auto; font-size: 13px; opacity: 0.8; }
+
+main { max-width: 1000px; margin: 0 auto; padding: 16px 20px 60px; }
+.card { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.13); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+.intro p { margin: 0 0 8px; line-height: 1.5; font-size: 14px; }
+.intro code { background: rgba(0, 0, 0, 0.3); padding: 1px 6px; border-radius: 5px; }
+.summary { font-weight: 700; color: var(--sun); margin: 0; }
+.error-box { background: rgba(227, 25, 43, 0.15); border: 1px solid var(--red); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; }
+
+.qcard { background: rgba(255, 255, 255, 0.06); border: 2px solid rgba(255, 210, 63, 0.35); border-radius: 16px; padding: 14px 16px; margin-bottom: 14px; }
+.qcard.is-off { opacity: 0.6; border-style: dashed; border-color: rgba(255, 255, 255, 0.2); }
+.qcard.has-issues { border-color: #ff6b78; }
+.qhead { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+.qnum { font: 400 20px var(--font-display); color: var(--sun); min-width: 2ch; }
+.slot { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; padding: 3px 9px; border-radius: 999px; background: rgba(255, 210, 63, 0.18); color: var(--sun); }
+.slot.spare { background: rgba(255, 255, 255, 0.1); color: var(--cream); }
+.slot.off { background: transparent; border: 1px solid rgba(255, 255, 255, 0.25); color: var(--cream); }
+.badge { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; padding: 3px 8px; border-radius: 999px; background: var(--orange); color: var(--ink); }
+.use { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; cursor: pointer; }
+.use input { width: 18px; height: 18px; accent-color: var(--sun); }
+.spacer { flex: 1; }
+.qhead .btn { padding: 6px 10px; font-size: 13px; }
+.qid { font: 500 12px ui-monospace, Menlo, monospace; opacity: 0.5; }
+
+.qlabel { display: block; font-size: 12px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--pink); margin-bottom: 4px; }
+.qtext { width: 100%; font-size: 17px; font-weight: 700; margin-bottom: 10px; }
+
+.alist { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 6px; }
+.alist li { display: grid; grid-template-columns: 2.2em 1fr 84px auto; gap: 8px; align-items: center; }
+.arank { font: 400 15px var(--font-display); text-align: center; opacity: 0.75; }
+.alist input[type=number] { text-align: right; }
+.alist .btn { padding: 6px 10px; }
+
+.qfoot { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 14px; }
+.qfoot .btn { padding: 6px 12px; font-size: 13px; }
+.total b { font: 400 16px var(--font-display); color: var(--sun); }
+.total.over b { color: #ff6b78; }
+.issues { color: #ffb4bd; font-weight: 700; }
+
+@media (max-width: 560px) {
+  .alist li { grid-template-columns: 1.6em 1fr 64px auto; gap: 6px; }
+}

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hispanic Family Feud · Display</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Bungee&display=swap">
+  <link rel="stylesheet" href="assets/css/common.css">
+  <link rel="stylesheet" href="assets/css/display.css">
+  <script type="module" src="assets/js/display.js"></script>
+</head>
+<body class="display">
+  <div id="stage" class="stage">
+    <div class="bg-rays" aria-hidden="true"></div>
+    <div id="papel" class="stage-papel"></div>
+
+    <header class="d-header">
+      <div class="d-badge d-round"><span class="lbl">Round</span><span class="val" id="d-round">1</span><span class="of" id="d-round-of"></span></div>
+      <h1 class="d-title"><span class="t1">Hispanic</span><span class="t2">Family Feud</span></h1>
+      <div class="d-badge d-mult"><span class="val" id="d-mult">×1</span><span class="lbl" id="d-mult-lbl">Single points</span></div>
+    </header>
+
+    <section class="d-question" id="d-question">
+      <div class="q-kicker" id="d-qkicker">We surveyed 100 people…</div>
+      <div class="q-text" id="d-qtext"></div>
+    </section>
+
+    <section class="d-main">
+      <aside class="team team-a" id="team0">
+        <div class="team-chip"></div>
+        <div class="team-label">Familia</div>
+        <div class="team-name"></div>
+        <div class="team-score">0</div>
+        <div class="team-player"></div>
+      </aside>
+
+      <div class="d-center">
+        <div class="bank"><div class="bank-box"><span class="bank-lbl">Bank</span><span class="bank-val" id="d-bank">0</span></div></div>
+        <div class="board" id="d-board"></div>
+        <div class="strikes" id="d-strikes" aria-label="Strikes"></div>
+      </div>
+
+      <aside class="team team-b" id="team1">
+        <div class="team-chip"></div>
+        <div class="team-label">Familia</div>
+        <div class="team-name"></div>
+        <div class="team-score">0</div>
+        <div class="team-player"></div>
+      </aside>
+    </section>
+
+    <footer class="ribbon" id="d-ribbon"><span class="ribbon-text" id="d-ribbon-text"></span><span class="ribbon-timer" id="d-timer" hidden></span></footer>
+
+    <div class="splash" id="d-splash" aria-live="polite"></div>
+    <div class="strike-overlay" id="d-xover" hidden></div>
+
+    <div class="title-screen" id="d-titlescreen" hidden>
+      <div class="ts-inner">
+        <div class="ts-kicker">¡Bienvenidos!</div>
+        <h1 class="ts-title"><span>Hispanic</span><span>Family Feud</span></h1>
+        <div class="ts-host">Presented by <strong>S.A.L.S.A.</strong></div>
+        <div class="ts-sub">Student Alliance for Learning, Success and Achievement · Kutztown University</div>
+        <div class="ts-wait">The game is about to begin</div>
+      </div>
+    </div>
+
+    <div class="winner-screen" id="d-winner" hidden>
+      <div class="ws-inner">
+        <div class="ws-kicker">¡Felicidades!</div>
+        <div class="ws-name" id="d-ws-name"></div>
+        <div class="ws-wins" id="d-ws-wins">Wins!</div>
+        <div class="ws-scores" id="d-ws-scores"></div>
+      </div>
+    </div>
+
+    <canvas id="d-confetti" class="confetti" width="1920" height="1080"></canvas>
+    <div class="fs-hint" id="fs-hint">Double-click or press F for full screen</div>
+  </div>
+</body>
+</html>

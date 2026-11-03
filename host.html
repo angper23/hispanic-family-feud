@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Host Console · Hispanic Family Feud</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Bungee&display=swap">
+  <link rel="stylesheet" href="assets/css/common.css">
+  <link rel="stylesheet" href="assets/css/host.css">
+  <script type="module" src="assets/js/host.js"></script>
+</head>
+<body class="host">
+  <div class="papel-wrap" id="papel"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-title">Hispanic Family Feud</span>
+      <span class="brand-sub">Host Console · S.A.L.S.A. at Kutztown University</span>
+    </div>
+    <div class="topbar-actions">
+      <button id="btn-display" class="btn btn-gold">Open Display Window</button>
+      <button id="btn-undo" class="btn" title="Undo the last action">↶ Undo <kbd>U</kbd></button>
+      <div class="vol">
+        <button id="btn-mute" class="btn" aria-pressed="false" title="Mute (M)">🔊 Sound</button>
+        <input type="range" id="volume" min="0" max="100" step="1" aria-label="Volume">
+      </div>
+      <a class="btn" href="editor.html" target="_blank" rel="noopener">Question Editor</a>
+      <button id="btn-reset" class="btn btn-danger">Reset Game</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Setup -->
+    <section id="setup" hidden>
+      <form id="setup-form" class="setup" autocomplete="off">
+        <h1 class="setup-title">Game setup</h1>
+        <div class="setup-grid">
+          <fieldset class="card team-card t0">
+            <legend>Family 1 · left side</legend>
+            <label>Family name <input name="name0" placeholder="Familia García"></label>
+            <label>Captain <input name="captain0" placeholder="Goes first in the Round 1 face-off"></label>
+            <label>Other players, in order <textarea name="players0" rows="5" placeholder="One name per line"></textarea></label>
+          </fieldset>
+          <fieldset class="card team-card t1">
+            <legend>Family 2 · right side</legend>
+            <label>Family name <input name="name1" placeholder="Familia López"></label>
+            <label>Captain <input name="captain1" placeholder="Goes first in the Round 1 face-off"></label>
+            <label>Other players, in order <textarea name="players1" rows="5" placeholder="One name per line"></textarea></label>
+          </fieldset>
+          <fieldset class="card settings-card">
+            <legend>Settings</legend>
+            <label>Main rounds <input type="number" name="numRounds" min="1" max="50" value="4"></label>
+            <label>Multipliers by round <input name="multipliers" value="1, 2, 3, 3">
+              <small>Comma-separated, Round 1 first. The last value repeats for later rounds.</small></label>
+            <label>Steal huddle timer (seconds) <input type="number" name="stealSeconds" min="3" max="300" value="20"></label>
+          </fieldset>
+        </div>
+        <div class="card setup-questions" id="setup-questions">Loading questions…</div>
+        <div class="setup-actions">
+          <button type="submit" class="btn btn-gold btn-xl">Start Game</button>
+          <span class="hint">Open the display window first, drag it to the projector, then double-click it for full screen.</span>
+        </div>
+      </form>
+    </section>
+
+    <!-- Game -->
+    <section id="game" hidden>
+      <div class="game-grid">
+        <div class="col-board">
+          <div class="card round-bar" id="round-bar"></div>
+          <div class="card question-box" id="question-box"></div>
+          <div class="answers" id="answers"></div>
+          <button id="btn-miss" class="btn btn-strike">✕ Not on board <kbd>X</kbd></button>
+          <p class="click-hint" id="click-hint"></p>
+          <div class="card" id="log-panel"></div>
+        </div>
+        <div class="col-side">
+          <div class="card phase-panel" id="phase-panel"></div>
+          <div class="card" id="teams-panel"></div>
+          <details class="card overrides" id="overrides">
+            <summary>Manual overrides</summary>
+            <div class="ovr-grid">
+              <label for="ovr-score0" id="ovr-name0">Family A score</label>
+              <input type="number" id="ovr-score0" step="1">
+              <button class="btn" data-ovr="score0">Set</button>
+              <label for="ovr-score1" id="ovr-name1">Family B score</label>
+              <input type="number" id="ovr-score1" step="1">
+              <button class="btn" data-ovr="score1">Set</button>
+              <label for="ovr-bank">Bank</label>
+              <input type="number" id="ovr-bank" min="0" step="1">
+              <button class="btn" data-ovr="bank">Set</button>
+              <label for="ovr-strikes">Strikes</label>
+              <input type="number" id="ovr-strikes" min="0" max="3" step="1">
+              <button class="btn" data-ovr="strikes">Set</button>
+            </div>
+            <div class="ovr-row" id="ovr-award"></div>
+            <div class="ovr-row" id="ovr-control"></div>
+            <div class="ovr-row">
+              <button class="btn" data-act="SWAP_QUESTION">Swap in a spare question</button>
+              <button class="btn btn-danger" id="btn-endgame">End game now</button>
+            </div>
+            <p class="small">Every override can be undone with <kbd>U</kbd>.</p>
+          </details>
+          <div class="card shortcuts">
+            <h3>Keyboard</h3>
+            <dl>
+              <dt><kbd>1</kbd>–<kbd>8</kbd></dt><dd>Reveal / pick answer N</dd>
+              <dt><kbd>X</kbd></dt><dd>Strike / not on board</dd>
+              <dt><kbd>Q</kbd></dt><dd>Reveal question</dd>
+              <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Left / right family buzzed first</dd>
+              <dt><kbd>P</kbd> <kbd>O</kbd></dt><dd>Play / pass</dd>
+              <dt><kbd>S</kbd></dt><dd>Start steal</dd>
+              <dt><kbd>T</kbd></dt><dd>Start huddle timer</dd>
+              <dt><kbd>R</kbd></dt><dd>Reveal remaining answers</dd>
+              <dt><kbd>N</kbd></dt><dd>Next round</dd>
+              <dt><kbd>U</kbd></dt><dd>Undo</dd>
+              <dt><kbd>M</kbd></dt><dd>Mute</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,109 @@
+{
+  "_about": "PLACEHOLDER DATA. These 8 sample questions and point values are made up for testing. Replace them with S.A.L.S.A.'s real survey results using editor.html, then Export and commit the file here. Answers are sorted high to low; points per question total 100 or less.",
+  "questions": [
+    {
+      "id": "seed-1",
+      "placeholder": true,
+      "question": "Name a food that's always at a Hispanic family party.",
+      "answers": [
+        { "text": "Arroz y frijoles (rice & beans)", "points": 29 },
+        { "text": "Tamales", "points": 21 },
+        { "text": "Empanadas", "points": 15 },
+        { "text": "Pernil (roast pork)", "points": 11 },
+        { "text": "Tacos", "points": 8 },
+        { "text": "Pastelitos", "points": 5 }
+      ]
+    },
+    {
+      "id": "seed-2",
+      "placeholder": true,
+      "question": "Name something your abuela always says.",
+      "answers": [
+        { "text": "¡Ponte un suéter!", "points": 27 },
+        { "text": "¿Ya comiste?", "points": 23 },
+        { "text": "Que Dios te bendiga", "points": 18 },
+        { "text": "Te lo dije", "points": 10 },
+        { "text": "Estás muy flaco/a", "points": 9 },
+        { "text": "¡Cuidado!", "points": 6 }
+      ]
+    },
+    {
+      "id": "seed-3",
+      "placeholder": true,
+      "question": "Name a holiday or celebration that's a big deal in Latino culture.",
+      "answers": [
+        { "text": "Navidad / Nochebuena", "points": 26 },
+        { "text": "Día de los Muertos", "points": 22 },
+        { "text": "Quinceañera", "points": 18 },
+        { "text": "Día de Reyes (Three Kings)", "points": 14 },
+        { "text": "Cinco de Mayo", "points": 8 },
+        { "text": "Independence Day", "points": 5 }
+      ]
+    },
+    {
+      "id": "seed-4",
+      "placeholder": true,
+      "question": "Name a kind of music you'd hear at a Latino party.",
+      "answers": [
+        { "text": "Reggaetón", "points": 32 },
+        { "text": "Salsa", "points": 25 },
+        { "text": "Bachata", "points": 18 },
+        { "text": "Merengue", "points": 12 },
+        { "text": "Cumbia", "points": 8 }
+      ]
+    },
+    {
+      "id": "seed-5",
+      "placeholder": true,
+      "question": "Name something you'd find in a Hispanic family's kitchen.",
+      "answers": [
+        { "text": "Sazón / Adobo", "points": 28 },
+        { "text": "Cafetera (coffee maker)", "points": 20 },
+        { "text": "Comal / Tortilla press", "points": 15 },
+        { "text": "Cookie tin full of sewing stuff", "points": 14 },
+        { "text": "Plátanos", "points": 10 },
+        { "text": "Pilón (mortar & pestle)", "points": 6 }
+      ]
+    },
+    {
+      "id": "seed-6",
+      "placeholder": true,
+      "question": "Name a chore your mom made you do before company came over.",
+      "answers": [
+        { "text": "Trapear (mop the floors)", "points": 30 },
+        { "text": "Clean your room", "points": 22 },
+        { "text": "Wash the dishes", "points": 17 },
+        { "text": "Take out the trash", "points": 11 },
+        { "text": "Dust", "points": 8 },
+        { "text": "Hide stuff in a closet", "points": 5 }
+      ]
+    },
+    {
+      "id": "seed-7",
+      "placeholder": true,
+      "question": "Name something guests always do at a Latino family party.",
+      "answers": [
+        { "text": "Dance", "points": 34 },
+        { "text": "Eat (a lot)", "points": 24 },
+        { "text": "Play dominoes", "points": 15 },
+        { "text": "Chisme (gossip)", "points": 12 },
+        { "text": "Karaoke", "points": 7 },
+        { "text": "Greet everyone with a kiss", "points": 5 }
+      ]
+    },
+    {
+      "id": "seed-8",
+      "placeholder": true,
+      "question": "Name a Spanish word or phrase that almost everyone knows, even if they don't speak Spanish.",
+      "answers": [
+        { "text": "Hola", "points": 31 },
+        { "text": "Gracias", "points": 22 },
+        { "text": "Amigo", "points": 14 },
+        { "text": "Adiós", "points": 11 },
+        { "text": "Por favor", "points": 9 },
+        { "text": "Mi casa es su casa", "points": 6 },
+        { "text": "Fiesta", "points": 4 }
+      ]
+    }
+  ]
+}

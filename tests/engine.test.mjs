@@ -1,0 +1,161 @@
+// Rules tests for the game engine. Run with: node --test tests/
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {
+  freshState,
+  apply,
+  faceoffPlayer,
+  playPlayer,
+  stealPlayer,
+  multiplierFor,
+} from '../assets/js/state.js';
+import { parseQuestionFile, usableQuestions, questionIssues } from '../assets/js/questions.js';
+
+const file = JSON.parse(fs.readFileSync(new URL('../questions.json', import.meta.url)));
+const pool = usableQuestions(parseQuestionFile(file));
+
+function run(s, ...actions) {
+  for (const [type, payload] of actions) {
+    const r = apply(s, { type, payload });
+    if (r.error) throw new Error(`${type}: ${r.error}`);
+    s = r.state;
+  }
+  return s;
+}
+const start = (opts = {}) =>
+  run(freshState(), [
+    'START_GAME',
+    {
+      teams: [
+        { name: 'García', captain: 'Ana', players: ['Beto', 'Carla'] },
+        { name: 'López', captain: 'Diego', players: ['Eva'] },
+      ],
+      settings: { numRounds: 4, multipliers: [1, 2, 3, 3], stealSeconds: 20, ...opts },
+      pool,
+    },
+  ]);
+const toFaceoff = (s, team = 0) => run(s, ['REVEAL_QUESTION'], ['BUZZ', { team }]);
+
+test('seed questions are valid placeholder data', () => {
+  assert.equal(pool.length, 8);
+  for (const q of parseQuestionFile(file)) {
+    assert.deepEqual(questionIssues(q), [], q.question);
+    assert.ok(q.placeholder);
+    assert.ok(q.answers.length >= 3 && q.answers.length <= 8);
+  }
+});
+
+test('multipliers: x1, x2, x3, then x3 repeats', () => {
+  const st = { multipliers: [1, 2, 3, 3] };
+  assert.deepEqual([0, 1, 2, 3, 4, 7].map((r) => multiplierFor(st, r)), [1, 2, 3, 3, 3, 3]);
+});
+
+test('captains face off in round 1', () => {
+  const s = start();
+  assert.equal(faceoffPlayer(s, 0), 'Ana');
+  assert.equal(faceoffPlayer(s, 1), 'Diego');
+});
+
+test('#1 answer on first buzz wins control immediately', () => {
+  let s = toFaceoff(start(), 1);
+  s = run(s, ['FACEOFF_ANSWER', { idx: 0 }]);
+  assert.equal(s.phase, 'choice');
+  assert.equal(s.choiceTeam, 1);
+  assert.equal(s.bank, pool[0].answers[0].points);
+});
+
+test('not #1: other player guesses; higher rank wins', () => {
+  let s = toFaceoff(start(), 0);
+  s = run(s, ['FACEOFF_ANSWER', { idx: 2 }]);
+  assert.equal(s.phase, 'faceoff');
+  assert.equal(s.faceoff.turn, 1);
+  s = run(s, ['FACEOFF_ANSWER', { idx: 1 }]);
+  assert.equal(s.choiceTeam, 1);
+  assert.equal(s.bank, pool[0].answers[2].points + pool[0].answers[1].points);
+});
+
+test('not #1: other player ranks lower or misses, first family wins', () => {
+  let s = run(toFaceoff(start(), 0), ['FACEOFF_ANSWER', { idx: 1 }], ['FACEOFF_ANSWER', { idx: 3 }]);
+  assert.equal(s.choiceTeam, 0);
+  s = run(toFaceoff(start(), 0), ['FACEOFF_ANSWER', { idx: 1 }], ['FACEOFF_ANSWER', { idx: null }]);
+  assert.equal(s.choiceTeam, 0);
+});
+
+test('both miss: alternate through members, first hit wins', () => {
+  let s = run(toFaceoff(start(), 0), ['FACEOFF_ANSWER', { idx: null }], ['FACEOFF_ANSWER', { idx: null }]);
+  assert.equal(s.faceoff.turn, 0);
+  assert.equal(faceoffPlayer(s, 0), 'Beto');
+  s = run(s, ['FACEOFF_ANSWER', { idx: null }]);
+  assert.equal(faceoffPlayer(s, 1), 'Eva');
+  s = run(s, ['FACEOFF_ANSWER', { idx: 4 }]);
+  assert.equal(s.choiceTeam, 1);
+});
+
+test('play, three strikes, steal succeeds with whole bank', () => {
+  let s = run(toFaceoff(start(), 0), ['FACEOFF_ANSWER', { idx: 0 }], ['PLAY']);
+  assert.equal(s.controlTeam, 0);
+  assert.equal(playPlayer(s), 'Beto'); // next after the face-off player
+  s = run(s, ['REVEAL', { idx: 1 }], ['STRIKE'], ['STRIKE'], ['STRIKE']);
+  assert.equal(s.phase, 'steal');
+  assert.equal(s.steal.team, 1);
+  assert.equal(stealPlayer(s), 'Diego');
+  const bank = s.bank;
+  s = run(s, ['STEAL_ANSWER', { idx: 3 }]);
+  assert.equal(s.phase, 'roundEnd');
+  assert.equal(s.teams[1].score, bank + pool[0].answers[3].points);
+  assert.equal(s.teams[0].score, 0);
+});
+
+test('failed steal awards bank to the playing family', () => {
+  let s = run(toFaceoff(start(), 0), ['FACEOFF_ANSWER', { idx: 0 }], ['PASS']);
+  assert.equal(s.controlTeam, 1);
+  s = run(s, ['REVEAL', { idx: 1 }], ['START_STEAL'], ['STEAL_ANSWER', { idx: null }]);
+  const expected = pool[0].answers[0].points + pool[0].answers[1].points;
+  assert.equal(s.teams[1].score, expected);
+  assert.equal(s.roundResult.how, 'defend');
+});
+
+test('clearing the board wins the bank; reveal remaining gives no points', () => {
+  let s = run(toFaceoff(start(), 0), ['FACEOFF_ANSWER', { idx: 0 }], ['PLAY']);
+  const n = pool[0].answers.length;
+  for (let i = 1; i < n; i++) s = run(s, ['REVEAL', { idx: i }]);
+  assert.equal(s.phase, 'roundEnd');
+  assert.equal(s.teams[0].score, pool[0].answers.reduce((a, b) => a + b.points, 0));
+
+  let t = run(toFaceoff(start(), 0), ['FACEOFF_ANSWER', { idx: 0 }], ['PLAY'], ['START_STEAL'], ['STEAL_ANSWER', { idx: null }]);
+  const before = t.teams[0].score;
+  t = run(t, ['REVEAL_REMAINING']);
+  assert.ok(t.revealed.every(Boolean));
+  assert.equal(t.teams[0].score, before);
+});
+
+test('round 2 doubles points and rotates face-off players', () => {
+  let s = run(toFaceoff(start(), 0), ['FACEOFF_ANSWER', { idx: 0 }], ['PLAY'], ['START_STEAL'], ['STEAL_ANSWER', { idx: null }], ['NEXT_ROUND']);
+  assert.equal(s.round, 1);
+  assert.equal(faceoffPlayer(s, 0), 'Beto');
+  assert.equal(faceoffPlayer(s, 1), 'Eva');
+  s = run(s, ['REVEAL_QUESTION'], ['BUZZ', { team: 0 }], ['FACEOFF_ANSWER', { idx: 0 }]);
+  assert.equal(s.bank, pool[1].answers[0].points * 2);
+});
+
+test('game ends after the last round with a winner', () => {
+  let s = start({ numRounds: 1 });
+  s = run(toFaceoff(s, 0), ['FACEOFF_ANSWER', { idx: 0 }], ['PLAY'], ['START_STEAL'], ['STEAL_ANSWER', { idx: null }], ['NEXT_ROUND']);
+  assert.equal(s.phase, 'gameOver');
+  assert.equal(s.winner, 0);
+});
+
+test('invalid actions return errors and leave state alone', () => {
+  const s = start();
+  assert.ok(apply(s, { type: 'STRIKE' }).error);
+  assert.ok(apply(s, { type: 'BUZZ', payload: { team: 0 } }).error); // question hidden
+  const f = toFaceoff(s, 0);
+  assert.ok(apply(f, { type: 'FACEOFF_ANSWER', payload: { idx: 7 } }).error); // only 6 answers
+});
+
+test('swap question uses a spare before answers are given', () => {
+  const s = run(start(), ['SWAP_QUESTION']);
+  assert.equal(s.question.id, pool[1].id);
+  assert.equal(s.round, 0);
+});

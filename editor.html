@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Question Editor · Hispanic Family Feud</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Bungee&display=swap">
+  <link rel="stylesheet" href="assets/css/common.css">
+  <link rel="stylesheet" href="assets/css/editor.css">
+  <script type="module" src="assets/js/editor.js"></script>
+</head>
+<body class="editor">
+  <div class="papel-wrap" id="papel"></div>
+  <header class="ed-head">
+    <div>
+      <h1>Question Editor</h1>
+      <p class="sub">Hispanic Family Feud · S.A.L.S.A. at Kutztown University</p>
+    </div>
+    <a class="btn" href="host.html">← Back to Host Console</a>
+  </header>
+
+  <div class="toolbar" role="toolbar" aria-label="Question set actions">
+    <button class="btn btn-gold" id="btn-add">+ Add question</button>
+    <button class="btn" id="btn-export">Export JSON</button>
+    <button class="btn" id="btn-import">Import JSON</button>
+    <input type="file" id="file-import" accept=".json,application/json" hidden>
+    <button class="btn" id="btn-all">Use all</button>
+    <button class="btn" id="btn-none">Use none</button>
+    <button class="btn btn-danger" id="btn-revert">Revert to questions.json</button>
+    <span class="status" id="status"></span>
+  </div>
+
+  <main>
+    <div class="intro card">
+      <p><strong>How this works.</strong> Changes save automatically in this browser, and the Host Console uses them right away.
+        The order below is the play order. Unchecked questions are skipped. Extra checked questions become spares the host can swap in.
+        When the set is final, click <strong>Export JSON</strong> and commit the file to the repo as <code>questions.json</code>, so every computer gets it.</p>
+      <p id="summary" class="summary"></p>
+    </div>
+    <div id="list"></div>
+  </main>
+</body>
+</html>
