@@ -166,9 +166,48 @@ const SOUNDS = {
   },
 };
 
+/* ---------- host-supplied files ---------- */
+const custom = new Map(); // slot -> AudioBuffer
+const active = new Set(); // playing file sources, so Stop can cut them
+
+/** Decodes and installs a file for a slot. Pass null to go back to the built-in sound. */
+export async function setCustomSound(slot, arrayBuffer) {
+  if (!arrayBuffer) {
+    custom.delete(slot);
+    return;
+  }
+  if (!initAudio()) throw new Error('This browser has no Web Audio support.');
+  const buf = await ctx.decodeAudioData(arrayBuffer.slice(0));
+  custom.set(slot, buf);
+}
+
+export const hasCustomSound = (slot) => custom.has(slot);
+
+function playBuffer(buf, when) {
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.connect(master);
+  src.onended = () => active.delete(src);
+  active.add(src);
+  src.start(when);
+}
+
+export function stopAll() {
+  active.forEach((src) => {
+    try {
+      src.stop();
+    } catch {
+      /* already stopped */
+    }
+  });
+  active.clear();
+}
+
 export function play(name, delay = 0) {
-  if (!initAudio() || !SOUNDS[name]) return;
-  SOUNDS[name](ctx.currentTime + 0.02 + delay);
+  if (!initAudio()) return;
+  const when = ctx.currentTime + 0.02 + delay;
+  if (custom.has(name)) playBuffer(custom.get(name), when);
+  else if (SOUNDS[name]) SOUNDS[name](when);
 }
 
 /** Maps reducer effects to sounds. */

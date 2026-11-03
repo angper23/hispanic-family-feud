@@ -45,6 +45,13 @@ Both windows must run in the **same browser on the same computer**. They talk th
 
 **Sound** plays from the host window, so it comes out of whatever the laptop's audio is routed to (usually the projector or the room speakers over HDMI). All sounds are generated with the Web Audio API. Use the mute button or volume slider in the top bar.
 
+**Soundboard.** The collapsible Soundboard panel at the top of the host console lets you load your own audio files:
+
+- **Game sounds**: replace any built-in sound (correct answer, strike, buzz-in, steal, round win, winner, reveal remaining, timer end). Click **▶ Test** to preview, and **Use built-in** to go back.
+- **Pads**: six free buttons for things like intro music or applause. Fire them by clicking or with `Shift`+`1`–`6`. **Stop all sounds** (or `Esc`) cuts anything playing.
+- Files are stored in that browser's IndexedDB on that computer only. They are never uploaded and never committed, so load them on the event laptop. MP3, WAV, M4A and OGG work; the limit is 40 MB per file.
+- You are responsible for having the rights to any audio you load.
+
 **Refreshing is safe.** The game is saved in the browser after every action, so a refresh of either window picks up where it left off.
 
 ## Running the game
@@ -64,6 +71,8 @@ The host console walks through each step and shows a hint under the answer butto
 | `N` | Next round, or the winner screen after the last round |
 | `U` or `Ctrl/Cmd+Z` | Undo |
 | `M` | Mute |
+| `Shift`+`1`–`6` | Fire soundboard pad |
+| `Esc` | Stop all soundboard sounds |
 
 **Undo** keeps a full history, so any mistake can be stepped back, including a whole round.
 
@@ -117,7 +126,8 @@ Optional fields: `"use": false` skips a question, and `"placeholder": true` mark
 index.html  host.html  editor.html  questions.json
 assets/css/   common, display, host, editor styles
 assets/js/    state.js (rules engine), sync.js, audio.js, questions.js,
-              display.js, host.js, editor.js, papel.js, confetti.js, ui.js
+              display.js, host.js, editor.js, papel.js, confetti.js, ui.js,
+              soundboard.js (host-loaded audio files, IndexedDB)
 tests/        engine.test.mjs
 ```
 

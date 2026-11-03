@@ -153,6 +153,36 @@ textarea { resize: vertical; }
 .ovr-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; font-size: 14px; }
 .ovr-row .lbl { font-weight: 700; margin-right: 4px; }
 
+/* Soundboard */
+.soundboard { max-width: 1600px; margin-left: auto; margin-right: auto; }
+.soundboard summary { cursor: pointer; font: 400 16px var(--font-display); color: var(--sun); }
+.sb-summary { font: 600 13px var(--font-body); color: var(--cream); opacity: 0.75; margin-left: 8px; }
+.sb-pads { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin: 14px 0 10px; }
+.sb-pad { display: flex; flex-direction: column; gap: 6px; }
+.sb-pad .fire {
+  min-height: 72px;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 16px;
+  background: linear-gradient(#5b1a8c, #3a1460);
+  border: 2px solid rgba(255, 210, 63, 0.4);
+}
+.sb-pad .fire.has-file { background: linear-gradient(#ff1a90, #b8005f); border-color: var(--sun); }
+.sb-pad .fire .key { font-size: 11px; opacity: 0.75; }
+.sb-pad .fire .file { font-size: 11px; font-weight: 600; opacity: 0.85; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-pad .row { display: flex; gap: 6px; }
+.sb-pad .row .btn { padding: 5px 10px; font-size: 12px; flex: 1; }
+.sb-row .btn { padding: 6px 12px; font-size: 12px; white-space: nowrap; flex: none; }
+.sb-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; }
+.sb-list { display: grid; gap: 6px; margin-bottom: 10px; }
+.sb-row { display: grid; grid-template-columns: minmax(160px, 1.2fr) minmax(120px, 1fr) auto; gap: 10px; align-items: center; padding: 6px 10px; border-radius: 10px; background: rgba(0, 0, 0, 0.22); }
+.sb-row .lbl { font-weight: 800; font-size: 14px; }
+.sb-row .file { font-size: 13px; opacity: 0.8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-row .file.custom { color: var(--sun); opacity: 1; font-weight: 700; }
+.sb-row .btns { display: flex; gap: 6px; }
+.sb-note { margin-bottom: 0; }
+@media (max-width: 640px) { .sb-row { grid-template-columns: 1fr; } }
+
 /* Shortcuts */
 .shortcuts dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 0; font-size: 14px; }
 .shortcuts dt { white-space: nowrap; }

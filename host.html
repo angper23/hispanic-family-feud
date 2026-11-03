@@ -32,6 +32,21 @@
   </header>
 
   <main>
+    <!-- Soundboard: always available, setup or game -->
+    <details class="card soundboard" id="soundboard">
+      <summary>Soundboard <span class="sb-summary" id="sb-summary"></span></summary>
+      <div class="sb-pads" id="sb-pads"></div>
+      <div class="sb-actions">
+        <button class="btn btn-danger" id="sb-stop">■ Stop all sounds <kbd>Esc</kbd></button>
+        <span class="small">Fire pads with <kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>6</kbd></span>
+      </div>
+      <h3>Game sounds</h3>
+      <p class="small">Load a file to replace a built-in sound. Empty slots use the built-in sound.</p>
+      <div class="sb-list" id="sb-events"></div>
+      <p class="small sb-note">Files you load are saved only in this browser on this computer. They are never uploaded, and they are not part of the repo or the GitHub Pages site. Load them on the laptop you'll run the event from.</p>
+      <input type="file" id="sb-file" accept="audio/*,.mp3,.wav,.m4a,.ogg,.aac" hidden>
+    </details>
+
     <!-- Setup -->
     <section id="setup" hidden>
       <form id="setup-form" class="setup" autocomplete="off">
@@ -117,6 +132,8 @@
               <dt><kbd>N</kbd></dt><dd>Next round</dd>
               <dt><kbd>U</kbd></dt><dd>Undo</dd>
               <dt><kbd>M</kbd></dt><dd>Mute</dd>
+              <dt><kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>6</kbd></dt><dd>Soundboard pad</dd>
+              <dt><kbd>Esc</kbd></dt><dd>Stop soundboard sounds</dd>
             </dl>
           </div>
         </div>
