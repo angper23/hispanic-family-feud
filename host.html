@@ -38,7 +38,7 @@
       <div class="sb-pads" id="sb-pads"></div>
       <div class="sb-actions">
         <button class="btn btn-danger" id="sb-stop">■ Stop all sounds <kbd>Esc</kbd></button>
-        <span class="small">Fire pads with <kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>6</kbd></span>
+        <span class="small">While this panel is open, keys <kbd>1</kbd>–<kbd>6</kbd> fire the pads. Close it to use the numbers for answers again. <kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>6</kbd> fires pads any time. Type in the box under a pad to rename it.</span>
       </div>
       <h3>Game sounds</h3>
       <p class="small">Load a file to replace a built-in sound. Empty slots use the built-in sound.</p>
@@ -132,7 +132,8 @@
               <dt><kbd>N</kbd></dt><dd>Next round</dd>
               <dt><kbd>U</kbd></dt><dd>Undo</dd>
               <dt><kbd>M</kbd></dt><dd>Mute</dd>
-              <dt><kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>6</kbd></dt><dd>Soundboard pad</dd>
+              <dt><kbd>1</kbd>–<kbd>6</kbd></dt><dd>Soundboard pad (while the Soundboard is open)</dd>
+              <dt><kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>6</kbd></dt><dd>Soundboard pad, any time</dd>
               <dt><kbd>Esc</kbd></dt><dd>Stop soundboard sounds</dd>
             </dl>
           </div>
@@ -140,5 +141,6 @@
       </div>
     </section>
   </main>
+  <div class="pads-live" id="pads-live" hidden>🔢 Number keys fire the soundboard pads · close the Soundboard to pick answers</div>
 </body>
 </html>

@@ -181,6 +181,22 @@ textarea { resize: vertical; }
 .sb-row .file.custom { color: var(--sun); opacity: 1; font-weight: 700; }
 .sb-row .btns { display: flex; gap: 6px; }
 .sb-note { margin-bottom: 0; }
+.sb-label { width: 100%; padding: 5px 8px; font-size: 13px; text-align: center; }
+.sb-summary[data-live=true]::after { content: ' · number keys → pads'; color: var(--sun); font-weight: 800; }
+.pads-live {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 90;
+  max-width: calc(100vw - 32px);
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--sun);
+  color: var(--ink);
+  font-weight: 800;
+  font-size: 14px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+}
 @media (max-width: 640px) { .sb-row { grid-template-columns: 1fr; } }
 
 /* Shortcuts */

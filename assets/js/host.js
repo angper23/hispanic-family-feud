@@ -338,8 +338,10 @@ document.addEventListener('keydown', (e) => {
     stopAll();
     return;
   }
-  if (e.shiftKey && /^Digit[1-6]$/.test(e.code)) {
-    firePad(PAD_SLOTS[Number(e.code.slice(5)) - 1].slot);
+  // Pads: plain 1–6 while the Soundboard panel is open, Shift+1–6 any time.
+  const padKey = /^Digit[1-6]$/.test(e.code) ? Number(e.code.slice(5)) : /^[1-6]$/.test(k) ? Number(k) : 0;
+  if (padKey && (e.shiftKey || padsLive())) {
+    firePad(PAD_SLOTS[padKey - 1].slot);
     e.preventDefault();
     return;
   }
@@ -622,6 +624,43 @@ const soundFiles = {}; // slot -> file name of a loaded custom sound
 let sbError = null;
 let pendingSlot = null;
 const MAX_FILE_MB = 40;
+const PAD_LABELS_KEY = 'hff:padLabels:v1';
+
+/** True while the Soundboard panel is open: number keys then fire pads instead of picking answers. */
+const padsLive = () => $('soundboard').open;
+
+function loadPadLabels() {
+  try {
+    return JSON.parse(localStorage.getItem(PAD_LABELS_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+const padLabels = loadPadLabels();
+const padLabel = (slot) => padLabels[slot]?.trim() || PAD_SLOTS.find((p) => p.slot === slot).label;
+
+function updatePadsLive() {
+  const live = padsLive();
+  $('pads-live').hidden = !live;
+  $('sb-summary').dataset.live = String(live);
+}
+$('soundboard').addEventListener('toggle', updatePadsLive);
+
+$('soundboard').addEventListener('input', (e) => {
+  const slot = e.target.dataset?.sbLabel;
+  if (!slot) return;
+  padLabels[slot] = e.target.value;
+  try {
+    localStorage.setItem(PAD_LABELS_KEY, JSON.stringify(padLabels));
+  } catch {
+    /* storage full: the label still works until refresh */
+  }
+  const name = $('soundboard').querySelector(`[data-sb-play="${slot}"] .name`);
+  if (name) name.textContent = padLabel(slot);
+});
+$('soundboard').addEventListener('keydown', (e) => {
+  if (e.target.dataset?.sbLabel && (e.key === 'Enter' || e.key === 'Escape')) e.target.blur();
+});
 
 function firePad(slot) {
   if (!soundFiles[slot]) {
@@ -639,7 +678,8 @@ function renderSoundboard() {
     const f = soundFiles[slot];
     return `<div class="sb-pad">
       <button class="btn fire ${f ? 'has-file' : ''}" data-sb-play="${slot}">
-        <span>${esc(label)}</span><span class="file">${f ? esc(f) : 'Empty'}</span><span class="key">Shift+${i + 1}</span></button>
+        <span class="name">${esc(padLabel(slot))}</span><span class="file">${f ? esc(f) : 'Empty'}</span><span class="key">Key ${i + 1}</span></button>
+      <input class="sb-label" data-sb-label="${slot}" value="${esc(padLabels[slot] || '')}" placeholder="${esc(label)}" maxlength="28" aria-label="Rename pad ${i + 1}">
       <div class="row"><button class="btn" data-sb-load="${slot}">Load</button>${f ? `<button class="btn" data-sb-clear="${slot}">Clear</button>` : ''}</div>
     </div>`;
   }).join('');
@@ -701,6 +741,7 @@ $('sb-file').addEventListener('change', async (e) => {
 });
 
 async function initSoundboard() {
+  updatePadsLive();
   renderSoundboard();
   try {
     const all = await loadAllSounds();

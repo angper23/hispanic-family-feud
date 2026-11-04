@@ -48,7 +48,7 @@ Both windows must run in the **same browser on the same computer**. They talk th
 **Soundboard.** The collapsible Soundboard panel at the top of the host console lets you load your own audio files:
 
 - **Game sounds**: replace any built-in sound (correct answer, strike, buzz-in, steal, round win, winner, reveal remaining, timer end). Click **▶ Test** to preview, and **Use built-in** to go back.
-- **Pads**: six free buttons for things like intro music or applause. Fire them by clicking or with `Shift`+`1`–`6`. **Stop all sounds** (or `Esc`) cuts anything playing.
+- **Pads**: six free buttons for things like intro music or applause. Type in the box under a pad to rename it; names are saved in the browser. Fire a pad by clicking it, by pressing `1`–`6` while the Soundboard panel is open, or with `Shift`+`1`–`6` any time. A yellow badge shows while number keys are on pads; close the panel to use them for answers again. **Stop all sounds** (or `Esc`) cuts anything playing.
 - Files are stored in that browser's IndexedDB on that computer only. They are never uploaded and never committed, so load them on the event laptop. MP3, WAV, M4A and OGG work; the limit is 40 MB per file.
 - You are responsible for having the rights to any audio you load.
 
@@ -71,7 +71,7 @@ The host console walks through each step and shows a hint under the answer butto
 | `N` | Next round, or the winner screen after the last round |
 | `U` or `Ctrl/Cmd+Z` | Undo |
 | `M` | Mute |
-| `Shift`+`1`–`6` | Fire soundboard pad |
+| `1`–`6` with the Soundboard open, or `Shift`+`1`–`6` any time | Fire soundboard pad |
 | `Esc` | Stop all soundboard sounds |
 
 **Undo** keeps a full history, so any mistake can be stepped back, including a whole round.
