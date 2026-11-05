@@ -3,7 +3,18 @@
 // The buzzer only sends "team N pressed"; all game rules still run in the host's engine.
 
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no 0/O/1/I/L lookalikes
-const PREFIX = 'hff-';
+export const PREFIX = 'hff-';
+
+/** STUN for direct links, plus a public TURN relay as a fallback for networks that block peer-to-peer. */
+export const PEER_OPTIONS = {
+  config: {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun.cloudflare.com:3478' },
+      { urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turns:openrelay.metered.ca:443?transport=tcp'], username: 'openrelayproject', credential: 'openrelayproject' },
+    ],
+  },
+};
 
 const makeCode = () => Array.from({ length: 4 }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('');
 
@@ -63,7 +74,7 @@ export function createRemote({ getState, onBuzz, onChange }) {
       return onChange(info());
     }
     code = makeCode();
-    const p = new window.Peer(PREFIX + code);
+    const p = new window.Peer(PREFIX + code, PEER_OPTIONS);
     peer = p;
     error = null;
     p.on('open', () => onChange(info()));

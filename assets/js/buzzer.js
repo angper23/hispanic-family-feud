@@ -2,8 +2,9 @@
 // order of the touches is decided locally and exactly: the first pointerdown wins, the other
 // button locks instantly. Only that single result is sent to the host.
 
+import { PREFIX, PEER_OPTIONS } from './remote.js';
+
 const $ = (id) => document.getElementById(id);
-const PREFIX = 'hff-';
 
 let peer = null;
 let conn = null;
@@ -77,7 +78,7 @@ function join(code) {
   $('join-msg').textContent = 'Connecting…';
   history.replaceState(null, '', `?room=${room}`);
   peer?.destroy();
-  peer = new window.Peer();
+  peer = new window.Peer(undefined, PEER_OPTIONS);
   peer.on('open', connect);
   peer.on('error', (e) => {
     connected = false;
@@ -93,9 +94,16 @@ function join(code) {
 }
 
 let retry = null;
+let slow = null;
 function connect() {
   clearTimeout(retry);
   conn = peer.connect(PREFIX + room, { reliable: true });
+  clearTimeout(slow);
+  slow = setTimeout(() => {
+    if (!connected) {
+      $('banner').textContent = 'Still connecting… the network may be blocking the link. Try Wi-Fi on both devices, or reload.';
+    }
+  }, 12000);
   conn.on('open', () => {
     connected = true;
     show('pad');
