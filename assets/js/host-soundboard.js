@@ -67,7 +67,7 @@ function renderSoundboard() {
       <button class="btn fire ${f ? 'has-file' : ''}" data-sb-play="${slot}">
         <span class="name">${esc(padLabel(slot))}</span><span class="file">${f ? esc(f) : 'Empty'}</span><span class="key">Key ${i + 1}</span></button>
       <input class="sb-label" data-sb-label="${slot}" value="${esc(padLabels[slot] || '')}" placeholder="${esc(label)}" maxlength="28" aria-label="Rename pad ${i + 1}">
-      <div class="row"><button class="btn" data-sb-load="${slot}">Load</button>${f ? `<button class="btn" data-sb-clear="${slot}">Clear</button>` : ''}</div>
+      <div class="row"><button class="btn" data-sb-load="${slot}">Load / drag &amp; drop</button>${f ? `<button class="btn" data-sb-clear="${slot}">Clear</button>` : ''}</div>
     </div>`;
   }).join('');
   $('sb-events').innerHTML = EVENT_SLOTS.map(({ slot, label }) => {
@@ -75,7 +75,7 @@ function renderSoundboard() {
     return `<div class="sb-row"><span class="lbl">${esc(label)}</span>
       <span class="file ${f ? 'custom' : ''}" title="${esc(f || '')}">${f ? esc(f) : 'Built-in'}</span>
       <span class="btns"><button class="btn" data-sb-play="${slot}">▶ Test</button>
-      <button class="btn" data-sb-load="${slot}">Load</button>
+      <button class="btn" data-sb-load="${slot}">Load / drag &amp; drop</button>
       ${f ? `<button class="btn" data-sb-clear="${slot}">Use built-in</button>` : ''}</span></div>`;
   }).join('');
 }
