@@ -2,7 +2,7 @@
 // order of the touches is decided locally and exactly: the first pointerdown wins, the other
 // button locks instantly. Only that single result is sent to the host.
 
-import { PREFIX, PEER_OPTIONS } from './remote.js';
+import { PREFIX, PEER_OPTIONS } from './remote.js?v=3';
 
 const $ = (id) => document.getElementById(id);
 

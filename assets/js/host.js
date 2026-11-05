@@ -17,7 +17,7 @@ import {
   other,
 } from './state.js';
 import { publish, readState, onHello } from './sync.js';
-import { createRemote } from './remote.js';
+import { createRemote } from './remote.js?v=3';
 import { initAudio, setAudio, playFx, play, setCustomSound, stopAll } from './audio.js';
 import { EVENT_SLOTS, PAD_SLOTS, loadAllSounds, saveSound, removeSound } from './soundboard.js';
 import { loadQuestionBank, usableQuestions, isPlayable, BANK_KEY } from './questions.js';
