@@ -105,27 +105,68 @@ $('soundboard').addEventListener('click', async (e) => {
   return undefined;
 });
 
-$('sb-file').addEventListener('change', async (e) => {
+$('sb-file').addEventListener('change', (e) => {
   const file = e.target.files[0];
   e.target.value = '';
   const slot = pendingSlot;
   pendingSlot = null;
-  if (!file || !slot) return;
+  if (file && slot) loadFileInto(slot, file);
+});
+
+/** Validates, stores and activates a user-chosen audio file for a pad or game-event slot. */
+async function loadFileInto(slot, file) {
   if (file.size > MAX_FILE_MB * 1024 * 1024) {
     toast(`That file is over ${MAX_FILE_MB} MB. Trim it or use a compressed MP3.`);
     return;
   }
+  // Decode first: a bad file must not touch the sound that is already in this slot.
   try {
-    const rec = await saveSound(slot, file);
-    await setCustomSound(slot, rec.data);
-    soundFiles[slot] = file.name;
-    renderSoundboard();
-    toast(`Loaded ${file.name}.`);
+    await setCustomSound(slot, await file.arrayBuffer());
   } catch (err) {
-    await removeSound(slot).catch(() => {});
     toast(`Couldn't use that file: ${err.message || 'the browser could not decode it'}.`);
+    return;
   }
+  soundFiles[slot] = file.name;
+  renderSoundboard();
+  try {
+    await saveSound(slot, file);
+    toast(`Loaded ${file.name}.`);
+  } catch {
+    toast(`Loaded ${file.name} for this session, but the browser could not save it for next time.`);
+  }
+}
+
+/* ---------- drag and drop: drop an audio file on any pad or game-sound row ---------- */
+const hasFiles = (e) => [...(e.dataTransfer?.types || [])].includes('Files');
+const dropTarget = (e) => e.target.closest?.('.sb-pad, .sb-row');
+const slotOf = (el) => el?.querySelector('[data-sb-play]')?.dataset.sbPlay;
+const clearDrop = () => $('soundboard').querySelectorAll('.drop').forEach((el) => el.classList.remove('drop'));
+
+$('soundboard').addEventListener('dragover', (e) => {
+  if (!hasFiles(e)) return;
+  e.preventDefault();
+  const t = dropTarget(e);
+  clearDrop();
+  if (t) t.classList.add('drop');
+  e.dataTransfer.dropEffect = t ? 'copy' : 'none';
 });
+$('soundboard').addEventListener('dragleave', (e) => {
+  if (!e.currentTarget.contains(e.relatedTarget)) clearDrop();
+});
+$('soundboard').addEventListener('drop', (e) => {
+  if (!hasFiles(e)) return;
+  e.preventDefault();
+  const t = dropTarget(e);
+  clearDrop();
+  const slot = slotOf(t);
+  const files = [...e.dataTransfer.files];
+  if (!slot) return toast('Drop the file right onto a pad or a game-sound row.');
+  if (files.length > 1) toast('Only one file per slot: using the first one.');
+  loadFileInto(slot, files[0]);
+  return undefined;
+});
+// A file dropped anywhere else would make the browser leave the game and open the file.
+['dragover', 'drop'].forEach((type) => window.addEventListener(type, (e) => hasFiles(e) && e.preventDefault()));
 
 export async function initSoundboard() {
   updatePadsLive();

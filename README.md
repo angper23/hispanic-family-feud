@@ -57,6 +57,7 @@ Both windows must run in the **same browser on the same computer**. They talk th
 **Soundboard.** The collapsible Soundboard panel at the top of the host console lets you load your own audio files:
 
 - **Game sounds**: replace any built-in sound (correct answer, strike, buzz-in, steal, round win, winner, reveal remaining, timer end). Click **▶ Test** to preview, and **Use built-in** to go back.
+- **Drag and drop**: drag an audio file from Finder or Explorer straight onto any pad or game-sound row. A dashed outline shows where it will land, and dropping on a filled slot replaces it. The **Load** button still works too.
 - **Pads**: six free buttons for things like intro music or applause. Type in the box under a pad to rename it; names are saved in the browser. Fire a pad by clicking it, by pressing `1`–`6` while the Soundboard panel is open, or with `Shift`+`1`–`6` any time. A yellow badge shows while number keys are on pads; close the panel to use them for answers again. **Stop all sounds** (or `Esc`) cuts anything playing.
 - Files are stored in that browser's IndexedDB on that computer only. They are never uploaded and never committed, so load them on the event laptop. MP3, WAV, M4A and OGG work; the limit is 40 MB per file.
 - You are responsible for having the rights to any audio you load.

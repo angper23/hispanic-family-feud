@@ -197,6 +197,8 @@ textarea { resize: vertical; }
   font-size: 14px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
 }
+/* Drag-and-drop highlight */
+.sb-pad.drop, .sb-row.drop { outline: 3px dashed var(--sun); outline-offset: 3px; background: rgba(255, 210, 63, 0.14); }
 @media (max-width: 640px) { .sb-row { grid-template-columns: 1fr; } }
 
 /* Shortcuts */
