@@ -17,6 +17,7 @@ import {
   other,
 } from './state.js';
 import { publish, readState, onHello } from './sync.js';
+import { createRemote } from './remote.js';
 import { initAudio, setAudio, playFx, play, setCustomSound, stopAll } from './audio.js';
 import { EVENT_SLOTS, PAD_SLOTS, loadAllSounds, saveSound, removeSound } from './soundboard.js';
 import { loadQuestionBank, usableQuestions, isPlayable, BANK_KEY } from './questions.js';
@@ -63,6 +64,7 @@ function commit(next, { record = null } = {}) {
   state = next;
   publish(state);
   render();
+  remote.push();
 }
 
 function dispatch(type, payload) {
@@ -146,6 +148,48 @@ $('btn-display').addEventListener('click', () => {
     publish(state);
   }
 });
+/* ---------- remote buzzer ---------- */
+const remote = createRemote({
+  getState: () => state,
+  onBuzz: (team) => {
+    // Ignore late/duplicate presses; the engine only accepts the first buzz of a face-off.
+    if (state.phase === 'faceoff' && state.questionShown && state.faceoff.buzzed == null) dispatch('BUZZ', { team });
+  },
+  onChange: renderRemote,
+});
+function renderRemote(i) {
+  const btn = $('btn-remote');
+  const panel = $('remote-panel');
+  btn.textContent = i.open && i.code ? `📱 Buzzer ${i.code} · ${i.count}` : '📱 Remote Buzzer';
+  $('remote-code').textContent = i.code || '····';
+  $('remote-url-short').textContent = remote.url() ? remote.url().replace(/\?room=.*/, '') : '';
+  $('remote-status').textContent = i.error
+    ? i.error
+    : !i.open
+      ? ''
+      : i.count
+        ? `${i.count} buzzer${i.count > 1 ? 's' : ''} connected.`
+        : 'Waiting for the iPad to join…';
+  if (!i.open) panel.hidden = true;
+}
+$('btn-remote').addEventListener('click', () => {
+  const panel = $('remote-panel');
+  if (!remote.info().open) {
+    remote.start();
+    panel.hidden = false;
+  } else panel.hidden = !panel.hidden;
+  $('btn-remote').setAttribute('aria-expanded', String(!panel.hidden));
+});
+$('remote-stop').addEventListener('click', () => remote.stop());
+$('remote-copy').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(remote.url());
+    toast('Link copied.');
+  } catch {
+    toast(remote.url());
+  }
+});
+
 $('btn-undo').addEventListener('click', undo);
 $('btn-reset').addEventListener('click', resetGame);
 $('btn-endgame').addEventListener('click', async () => {

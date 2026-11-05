@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Bungee&display=swap">
   <link rel="stylesheet" href="assets/css/common.css">
   <link rel="stylesheet" href="assets/css/host.css">
+  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <script type="module" src="assets/js/host.js"></script>
 </head>
 <body class="host">
@@ -21,6 +22,7 @@
     </div>
     <div class="topbar-actions">
       <button id="btn-display" class="btn btn-gold">Open Display Window</button>
+      <button id="btn-remote" class="btn btn-gold" aria-expanded="false">📱 Remote Buzzer</button>
       <button id="btn-undo" class="btn" title="Undo the last action">↶ Undo <kbd>U</kbd></button>
       <div class="vol">
         <button id="btn-mute" class="btn" aria-pressed="false" title="Mute (M)">🔊 Sound</button>
@@ -30,6 +32,17 @@
       <button id="btn-reset" class="btn btn-danger">Reset Game</button>
     </div>
   </header>
+
+  <div class="remote-panel" id="remote-panel" hidden>
+    <h2>Remote Buzzer</h2>
+    <p>On the iPad, open <strong id="remote-url-short"></strong> and enter the code:</p>
+    <div class="remote-code" id="remote-code">····</div>
+    <p class="remote-status" id="remote-status"></p>
+    <div class="actions">
+      <button class="btn" id="remote-copy">Copy link</button>
+      <button class="btn btn-danger" id="remote-stop">Close room</button>
+    </div>
+  </div>
 
   <main>
     <!-- Soundboard: always available, setup or game -->

@@ -212,3 +212,16 @@ textarea { resize: vertical; }
 /* Game over */
 .final { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
 .final .tcard .score { font-size: 44px; }
+
+/* Remote buzzer panel */
+.remote-panel {
+  position: fixed; top: 76px; right: 16px; z-index: 50; width: 300px;
+  background: var(--ink); border: 2px solid var(--marigold); border-radius: 16px;
+  padding: 14px 16px; box-shadow: 0 12px 40px rgba(0,0,0,.5);
+}
+.remote-panel[hidden] { display: none; }
+.remote-panel h2 { margin: 0 0 6px; font-family: var(--font-display); color: var(--sun); font-size: 1.1rem; }
+.remote-panel p { margin: 6px 0; font-size: .9rem; }
+.remote-code { font: 900 3rem var(--font-display); letter-spacing: .15em; text-align: center; color: var(--cream); }
+.remote-status { color: var(--lime); text-align: center; }
+.remote-panel .actions { display: flex; gap: 8px; justify-content: center; }

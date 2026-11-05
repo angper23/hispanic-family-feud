@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Buzzer · Hispanic Family Feud</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Bungee&display=swap">
+  <link rel="stylesheet" href="assets/css/common.css">
+  <link rel="stylesheet" href="assets/css/buzzer.css">
+  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script type="module" src="assets/js/buzzer.js"></script>
+</head>
+<body class="buzzer-page">
+  <section id="join" class="join">
+    <h1>Remote Buzzer</h1>
+    <p>Enter the room code shown on the host console.</p>
+    <form id="join-form">
+      <input id="code" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD" aria-label="Room code">
+      <button class="btn btn-gold" type="submit">Join</button>
+    </form>
+    <p id="join-msg" class="msg" role="status"></p>
+  </section>
+
+  <section id="pad" class="pad" hidden>
+    <div id="banner" class="banner" role="status"></div>
+    <div class="buttons">
+      <button id="b0" class="bz t0" type="button"><span class="who"></span></button>
+      <button id="b1" class="bz t1" type="button"><span class="who"></span></button>
+    </div>
+  </section>
+</body>
+</html>

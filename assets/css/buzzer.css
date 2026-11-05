@@ -1,0 +1,45 @@
+/* iPad buzzer: two huge buttons, nothing else. */
+html, body { height: 100%; margin: 0; }
+.buzzer-page {
+  background: var(--night);
+  color: var(--cream);
+  font-family: var(--font-body);
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  overscroll-behavior: none;
+}
+.join { max-width: 420px; margin: 12vh auto 0; padding: 0 16px; text-align: center; }
+.join h1 { font-family: var(--font-display); color: var(--sun); }
+#join-form { display: flex; gap: 10px; justify-content: center; }
+#code {
+  width: 7ch; font: 800 2rem var(--font-display); text-align: center; text-transform: uppercase;
+  padding: 10px; border-radius: 12px; border: 2px solid var(--marigold); background: var(--ink); color: var(--cream);
+}
+.msg { min-height: 1.4em; color: var(--pink); }
+.pad {
+  display: flex; flex-direction: column; height: 100dvh;
+  padding: env(safe-area-inset-top) 12px env(safe-area-inset-bottom);
+  box-sizing: border-box; gap: 12px;
+}
+.banner {
+  text-align: center; font: 900 clamp(1.4rem, 5vw, 2.6rem) var(--font-display);
+  padding: 14px 8px; border-radius: 14px; background: var(--ink);
+}
+.banner.go { background: var(--lime); color: var(--ink); }
+.banner.done { background: var(--marigold); color: var(--ink); }
+.banner.wait { color: #c9b8e6; font-size: clamp(1rem, 3vw, 1.6rem); }
+.buttons { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-bottom: 12px; }
+.bz {
+  border: 0; border-radius: 28px; color: #fff; cursor: pointer;
+  font: 900 clamp(1.6rem, 6vw, 3.6rem) var(--font-display);
+  box-shadow: 0 10px 0 rgba(0,0,0,.35); transition: transform .04s, opacity .15s;
+}
+.bz.t0 { background: var(--magenta); }
+.bz.t1 { background: var(--turquoise); }
+.bz:active:not(:disabled), .bz.won { transform: translateY(8px); box-shadow: 0 2px 0 rgba(0,0,0,.35); }
+.bz:disabled { opacity: .35; }
+.bz.won { opacity: 1; outline: 6px solid var(--sun); }
+.bz.lost { opacity: .2; }
+@media (orientation: portrait) { .buttons { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; } }
