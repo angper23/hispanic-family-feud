@@ -6,6 +6,14 @@ It is a static site: plain HTML, CSS and JavaScript with no build step and no ba
 
 > **The questions in `questions.json` are placeholder data.** Replace them with your own survey results before the event. See [Editing questions](#editing-questions).
 
+## Use this for your own event
+
+1. **Fork** this repo on GitHub (or copy the folder).
+2. Edit [`assets/js/config.js`](assets/js/config.js): your game name, organization and venue, and a unique `topicPrefix` for the remote buzzer. Every page picks these up.
+3. Replace the placeholder questions: use the Question Editor, click **Export JSON**, and commit the file over `questions.json`.
+4. Turn on **Settings → Pages** (see [Deploy](#deploy-to-github-pages)). Your game is live at `https://<you>.github.io/<repo>/host.html`.
+5. **Deploy at least 15 minutes before the event.** Browsers cache scripts for about 10 minutes, so a late push can leave one device with a mix of old and new files.
+
 ## Pages
 
 | Page | Who sees it | What it does |
@@ -70,7 +78,8 @@ How it works and what to know:
 - **It needs the internet** on both devices, and the broker is a third-party service that could be down. The `←` / `→` keys always work as a fallback.
 - **The room is public.** Anyone who guessed the code could send a buzz. Codes are random and the only thing a buzz does is mark who was first.
 - **Reloading the host page closes the room** and gives a new code; **Close room** does the same.
-- **A small grey line** at the bottom of the buzzer page shows connection progress (`broker ok → host answered`). If a phone sticks on "Connecting to host…", read that line first. Open the page in a private tab if it looks stale (browsers cache scripts for about 10 minutes).
+- **Troubleshooting.** Add `&debug` to the buzzer address to show a small progress line at the bottom (`broker ok → host answered`). If a phone sticks on "Connecting to host…", read that line first. Open the page in a private tab if it looks stale (browsers cache scripts for about 10 minutes).
+- Broker addresses and the topic prefix live in `assets/js/config.js`. The MQTT library is bundled in `assets/vendor/`, so no CDN is needed.
 - The host and projector display still need to be in the same browser on the same computer; only the buzzer travels over the network.
 
 ## Running the game
@@ -143,11 +152,13 @@ Optional fields: `"use": false` skips a question, and `"placeholder": true` mark
 
 ```
 index.html  host.html  buzzer.html  editor.html  questions.json
-assets/css/   common, display, host, editor styles
-assets/js/    state.js (rules engine), sync.js, remote.js and buzzer.js (remote buzzer), audio.js, questions.js,
+assets/css/   common, display, host, editor, buzzer styles
+assets/vendor/ bundled third-party libraries (MQTT.js)
+assets/js/    config.js (branding and buzzer settings), state.js (rules engine), sync.js,
+              remote.js, host-remote.js and buzzer.js (remote buzzer), host-soundboard.js, audio.js, questions.js,
               display.js, host.js, editor.js, papel.js, confetti.js, ui.js,
               soundboard.js (host-loaded audio files, IndexedDB)
-tests/        engine.test.mjs
+tests/        engine.test.mjs, buzzer.test.mjs
 ```
 
 ## Tests
@@ -155,7 +166,7 @@ tests/        engine.test.mjs
 The rules engine has no DOM dependencies and is tested with Node's built-in runner:
 
 ```sh
-node --test tests/engine.test.mjs
+node --test tests/*.test.mjs
 ```
 
 ## Credits and assets

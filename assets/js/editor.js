@@ -16,6 +16,9 @@ import {
 } from './questions.js';
 import { papelPicado } from './papel.js';
 import { confirmDialog, toast, esc } from './ui.js';
+import { applyBranding } from './config.js';
+
+applyBranding('Question Editor');
 
 const $ = (id) => document.getElementById(id);
 const list = $('list');

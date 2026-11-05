@@ -2,10 +2,15 @@
 // order of the touches is decided locally and exactly: the first pointerdown wins, the other
 // button locks instantly. Only that single result is sent to the host (via a public MQTT broker).
 
-import { topics, connectBroker } from './remote.js?v=5';
+import { topics, connectBroker } from './remote.js';
+import { applyBranding } from './config.js';
+
+applyBranding('Buzzer');
 
 const $ = (id) => document.getElementById(id);
-const BUILD = 'v5';
+const BUILD = 'v6';
+const DEBUG = new URLSearchParams(location.search).has('debug'); // add ?debug to the address to show the progress line
+if (DEBUG) $('diag').hidden = false;
 const MY_ID = Math.random().toString(36).slice(2, 10);
 
 let client = null;
@@ -84,7 +89,7 @@ function join(code) {
   if (room.length !== 4) return ($('join-msg').textContent = 'Room codes are 4 characters.');
   if (!window.mqtt) return ($('join-msg').textContent = 'Could not load the messaging library. Check your connection.');
   $('join-msg').textContent = 'Connecting…';
-  history.replaceState(null, '', `?room=${room}`);
+  history.replaceState(null, '', `?room=${room}${DEBUG ? '&debug' : ''}`);
   show('pad');
   render();
   diag('contacting broker');
@@ -117,7 +122,10 @@ function join(code) {
           diag('host went quiet');
           render();
         }
-        if (!connected && Date.now() - lastHeard > 10000 && diagLog.length < 8) diag(`no answer from ${room}: check the code`);
+        if (!connected && Date.now() - lastHeard > 10000 && diagLog.length < 8) {
+          diag(`no answer from ${room}: check the code`);
+          $('banner').textContent = `No answer from room ${room}. Check the code, and that the host page is open.`;
+        }
       }, 4000);
     },
     () => {

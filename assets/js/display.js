@@ -14,6 +14,9 @@ import { readState, onState, sayHello } from './sync.js';
 import { papelPicado } from './papel.js';
 import { createConfetti } from './confetti.js';
 import { esc } from './ui.js';
+import { applyBranding } from './config.js';
+
+applyBranding('Display');
 
 const $ = (id) => document.getElementById(id);
 const stage = $('stage');

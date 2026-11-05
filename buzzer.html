@@ -8,8 +8,8 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Bungee&display=swap">
   <link rel="stylesheet" href="assets/css/common.css">
   <link rel="stylesheet" href="assets/css/buzzer.css">
-  <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
-  <script type="module" src="assets/js/buzzer.js?v=5"></script>
+  <script src="assets/vendor/mqtt.min.js"></script>
+  <script type="module" src="assets/js/buzzer.js"></script>
 </head>
 <body class="buzzer-page">
   <section id="join" class="join">
@@ -29,6 +29,6 @@
       <button id="b1" class="bz t1" type="button"><span class="who"></span></button>
     </div>
   </section>
-  <p id="diag" class="diag"></p>
+  <p id="diag" class="diag" hidden></p>
 </body>
 </html>

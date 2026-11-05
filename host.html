@@ -9,16 +9,16 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Bungee&display=swap">
   <link rel="stylesheet" href="assets/css/common.css">
   <link rel="stylesheet" href="assets/css/host.css">
-  <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
-  <script type="module" src="assets/js/host.js?v=5"></script>
+  <script src="assets/vendor/mqtt.min.js"></script>
+  <script type="module" src="assets/js/host.js"></script>
 </head>
 <body class="host">
   <div class="papel-wrap" id="papel"></div>
 
   <header class="topbar">
     <div class="brand">
-      <span class="brand-title">Hispanic Family Feud</span>
-      <span class="brand-sub">Host Console · S.A.L.S.A. at Kutztown University</span>
+      <span class="brand-title" data-brand="gameName">Hispanic Family Feud</span>
+      <span class="brand-sub">Host Console · <span data-brand="orgLine">S.A.L.S.A. at Kutztown University</span></span>
     </div>
     <div class="topbar-actions">
       <button id="btn-display" class="btn btn-gold">Open Display Window</button>

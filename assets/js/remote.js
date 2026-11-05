@@ -3,9 +3,12 @@
 // ours is involved, and it works on networks that block direct device-to-device links.
 // The buzzer only sends "team N pressed"; all game rules still run in the host's engine.
 
-export const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
+import { CONFIG } from './config.js';
+import { buzzStatus } from './state.js';
+
+const BROKERS = CONFIG.brokers;
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no 0/O/1/I/L lookalikes
-export const topics = (code) => ({ up: `hff-sal/${code}/up`, down: `hff-sal/${code}/down` });
+export const topics = (code) => ({ up: `${CONFIG.topicPrefix}/${code}/up`, down: `${CONFIG.topicPrefix}/${code}/down` });
 
 const makeCode = () => Array.from({ length: 4 }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('');
 
@@ -49,20 +52,7 @@ export function createRemote({ getState, onBuzz, onChange }) {
   const live = () => [...seen.values()].filter((t) => Date.now() - t < 12000).length;
   const info = () => ({ code, open, count: live(), error });
 
-  function status() {
-    const s = getState();
-    const fo = s.faceoff;
-    const armed = s.phase === 'faceoff' && !!s.questionShown && fo?.buzzed == null && !(fo?.attempts?.length);
-    return {
-      type: 'status',
-      armed,
-      buzzed: s.phase === 'faceoff' ? (fo?.buzzed ?? null) : null,
-      phase: s.phase,
-      names: s.teams.map((t) => t.name),
-    };
-  }
-
-  const send = () => client?.connected && client.publish(topics(code).down, JSON.stringify(status()), { qos: 1 });
+  const send = () => client?.connected && client.publish(topics(code).down, JSON.stringify(buzzStatus(getState())), { qos: 1 });
 
   /** Call after every state change. */
   const push = () => open && send();

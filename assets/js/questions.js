@@ -1,6 +1,7 @@
 // Question bank: questions.json in the repo, overridden by editor changes in localStorage.
 
 import { MAX_ANSWERS } from './state.js';
+import { CONFIG } from './config.js';
 
 export const BANK_KEY = 'hff:questions:v1';
 
@@ -97,7 +98,7 @@ export function usableQuestions(list) {
 export function exportJSON(list) {
   const out = {
     _about:
-      'Hispanic Family Feud question set (S.A.L.S.A., Kutztown University). Answers are sorted high to low; points per question total 100 or less. Questions with "use": false are skipped. Order = play order.',
+      `${CONFIG.gameName} question set (${CONFIG.orgShort}, ${CONFIG.venue}). Answers are sorted high to low; points per question total 100 or less. Questions with "use": false are skipped. Order = play order.`,
     exportedAt: new Date().toISOString(),
     questions: list.map((q) => ({
       id: q.id,

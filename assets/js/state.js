@@ -117,6 +117,19 @@ function clampInt(v, lo, hi, fallback) {
 
 /* ---------- internal mutations (operate on a cloned state) ---------- */
 
+/** True while a face-off is waiting for someone to buzz in: question on screen, nobody buzzed yet. */
+export const buzzArmed = (s) =>
+  s.phase === 'faceoff' && !!s.questionShown && s.faceoff?.buzzed == null && !s.faceoff?.attempts?.length;
+
+/** What the remote buzzer needs to know, sent after every state change. */
+export const buzzStatus = (s) => ({
+  type: 'status',
+  armed: buzzArmed(s),
+  buzzed: s.phase === 'faceoff' ? (s.faceoff?.buzzed ?? null) : null,
+  phase: s.phase,
+  names: s.teams.map((t) => t.name),
+});
+
 function setupRound(s) {
   s.question = s.pool[s.qPtr];
   const n = s.question.answers.length;

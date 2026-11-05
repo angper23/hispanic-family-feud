@@ -17,9 +17,11 @@ import {
   other,
 } from './state.js';
 import { publish, readState, onHello } from './sync.js';
-import { createRemote } from './remote.js?v=5';
-import { initAudio, setAudio, playFx, play, setCustomSound, stopAll } from './audio.js';
-import { EVENT_SLOTS, PAD_SLOTS, loadAllSounds, saveSound, removeSound } from './soundboard.js';
+import { initRemoteUI } from './host-remote.js';
+import { padsLive, firePad, initSoundboard } from './host-soundboard.js';
+import { applyBranding, CONFIG } from './config.js';
+import { initAudio, setAudio, playFx, play, stopAll } from './audio.js';
+import { PAD_SLOTS } from './soundboard.js';
 import { loadQuestionBank, usableQuestions, isPlayable, BANK_KEY } from './questions.js';
 import { papelPicado } from './papel.js';
 import { confirmDialog, toast, esc, isDialogOpen } from './ui.js';
@@ -31,6 +33,7 @@ let state = readState() || freshState(null);
 let history = loadHistory();
 let bank = { questions: [], source: 'file', error: null };
 
+applyBranding('Host Console');
 papelPicado($('papel'), { count: 22, width: 1920, height: 118 });
 setAudio(state.settings);
 
@@ -139,6 +142,9 @@ volume.addEventListener('input', () => {
 });
 volume.addEventListener('change', () => play('ding'));
 
+/* ---------- remote buzzer ---------- */
+const remote = initRemoteUI({ getState: () => state, dispatch });
+
 /* ---------- top bar ---------- */
 $('btn-display').addEventListener('click', () => {
   const w = window.open('index.html', 'hff-display', 'popup=yes,width=1280,height=720');
@@ -148,48 +154,6 @@ $('btn-display').addEventListener('click', () => {
     publish(state);
   }
 });
-/* ---------- remote buzzer ---------- */
-const remote = createRemote({
-  getState: () => state,
-  onBuzz: (team) => {
-    // Ignore late/duplicate presses; the engine only accepts the first buzz of a face-off.
-    if (state.phase === 'faceoff' && state.questionShown && state.faceoff.buzzed == null) dispatch('BUZZ', { team });
-  },
-  onChange: renderRemote,
-});
-function renderRemote(i) {
-  const btn = $('btn-remote');
-  const panel = $('remote-panel');
-  btn.textContent = i.open && i.code ? `📱 Buzzer ${i.code} · ${i.count}` : '📱 Remote Buzzer';
-  $('remote-code').textContent = i.code || '····';
-  $('remote-url-short').textContent = remote.url() ? remote.url().replace(/\?room=.*/, '') : '';
-  $('remote-status').textContent = i.error
-    ? i.error
-    : !i.open
-      ? ''
-      : i.count
-        ? `${i.count} buzzer${i.count > 1 ? 's' : ''} connected.`
-        : 'Waiting for the iPad to join…';
-  if (!i.open) panel.hidden = true;
-}
-$('btn-remote').addEventListener('click', () => {
-  const panel = $('remote-panel');
-  if (!remote.info().open) {
-    remote.start();
-    panel.hidden = false;
-  } else panel.hidden = !panel.hidden;
-  $('btn-remote').setAttribute('aria-expanded', String(!panel.hidden));
-});
-$('remote-stop').addEventListener('click', () => remote.stop());
-$('remote-copy').addEventListener('click', async () => {
-  try {
-    await navigator.clipboard.writeText(remote.url());
-    toast('Link copied.');
-  } catch {
-    toast(remote.url());
-  }
-});
-
 $('btn-undo').addEventListener('click', undo);
 $('btn-reset').addEventListener('click', resetGame);
 $('btn-endgame').addEventListener('click', async () => {
@@ -426,7 +390,7 @@ function render() {
   const setup = state.phase === 'setup';
   $('setup').hidden = !setup;
   $('game').hidden = setup;
-  document.title = setup ? 'Host Console · Hispanic Family Feud' : `R${state.round + 1} · ${PHASE_LABEL[state.phase]} · Host`;
+  document.title = setup ? `Host Console · ${CONFIG.gameName}` : `R${state.round + 1} · ${PHASE_LABEL[state.phase]} · Host`;
   if (setup) {
     renderSetupQuestions();
     return;
@@ -662,146 +626,6 @@ function tickHostTimer() {
   }
 }
 setInterval(tickHostTimer, 200);
-
-/* ---------- soundboard ---------- */
-const soundFiles = {}; // slot -> file name of a loaded custom sound
-let sbError = null;
-let pendingSlot = null;
-const MAX_FILE_MB = 40;
-const PAD_LABELS_KEY = 'hff:padLabels:v1';
-
-/** True while the Soundboard panel is open: number keys then fire pads instead of picking answers. */
-const padsLive = () => $('soundboard').open;
-
-function loadPadLabels() {
-  try {
-    return JSON.parse(localStorage.getItem(PAD_LABELS_KEY) || '{}');
-  } catch {
-    return {};
-  }
-}
-const padLabels = loadPadLabels();
-const padLabel = (slot) => padLabels[slot]?.trim() || PAD_SLOTS.find((p) => p.slot === slot).label;
-
-function updatePadsLive() {
-  const live = padsLive();
-  $('pads-live').hidden = !live;
-  $('sb-summary').dataset.live = String(live);
-}
-$('soundboard').addEventListener('toggle', updatePadsLive);
-
-$('soundboard').addEventListener('input', (e) => {
-  const slot = e.target.dataset?.sbLabel;
-  if (!slot) return;
-  padLabels[slot] = e.target.value;
-  try {
-    localStorage.setItem(PAD_LABELS_KEY, JSON.stringify(padLabels));
-  } catch {
-    /* storage full: the label still works until refresh */
-  }
-  const name = $('soundboard').querySelector(`[data-sb-play="${slot}"] .name`);
-  if (name) name.textContent = padLabel(slot);
-});
-$('soundboard').addEventListener('keydown', (e) => {
-  if (e.target.dataset?.sbLabel && (e.key === 'Enter' || e.key === 'Escape')) e.target.blur();
-});
-
-function firePad(slot) {
-  if (!soundFiles[slot]) {
-    toast('That pad is empty. Open the Soundboard and load a file into it.');
-    return;
-  }
-  initAudio();
-  play(slot);
-}
-
-function renderSoundboard() {
-  const loaded = Object.keys(soundFiles).length;
-  $('sb-summary').textContent = sbError ? `· ${sbError}` : loaded ? `· ${loaded} file${loaded === 1 ? '' : 's'} loaded` : '· built-in sounds';
-  $('sb-pads').innerHTML = PAD_SLOTS.map(({ slot, label }, i) => {
-    const f = soundFiles[slot];
-    return `<div class="sb-pad">
-      <button class="btn fire ${f ? 'has-file' : ''}" data-sb-play="${slot}">
-        <span class="name">${esc(padLabel(slot))}</span><span class="file">${f ? esc(f) : 'Empty'}</span><span class="key">Key ${i + 1}</span></button>
-      <input class="sb-label" data-sb-label="${slot}" value="${esc(padLabels[slot] || '')}" placeholder="${esc(label)}" maxlength="28" aria-label="Rename pad ${i + 1}">
-      <div class="row"><button class="btn" data-sb-load="${slot}">Load</button>${f ? `<button class="btn" data-sb-clear="${slot}">Clear</button>` : ''}</div>
-    </div>`;
-  }).join('');
-  $('sb-events').innerHTML = EVENT_SLOTS.map(({ slot, label }) => {
-    const f = soundFiles[slot];
-    return `<div class="sb-row"><span class="lbl">${esc(label)}</span>
-      <span class="file ${f ? 'custom' : ''}" title="${esc(f || '')}">${f ? esc(f) : 'Built-in'}</span>
-      <span class="btns"><button class="btn" data-sb-play="${slot}">▶ Test</button>
-      <button class="btn" data-sb-load="${slot}">Load</button>
-      ${f ? `<button class="btn" data-sb-clear="${slot}">Use built-in</button>` : ''}</span></div>`;
-  }).join('');
-}
-
-$('soundboard').addEventListener('click', async (e) => {
-  const b = e.target.closest('button');
-  if (!b) return;
-  if (b.id === 'sb-stop') return stopAll();
-  if (b.dataset.sbPlay) {
-    const slot = b.dataset.sbPlay;
-    if (slot.startsWith('pad')) return firePad(slot);
-    initAudio();
-    return play(slot);
-  }
-  if (b.dataset.sbLoad) {
-    pendingSlot = b.dataset.sbLoad;
-    return $('sb-file').click();
-  }
-  if (b.dataset.sbClear) {
-    const slot = b.dataset.sbClear;
-    await removeSound(slot).catch(() => {});
-    await setCustomSound(slot, null);
-    delete soundFiles[slot];
-    renderSoundboard();
-    toast(slot.startsWith('pad') ? 'Pad cleared.' : 'Back to the built-in sound.');
-  }
-  return undefined;
-});
-
-$('sb-file').addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  e.target.value = '';
-  const slot = pendingSlot;
-  pendingSlot = null;
-  if (!file || !slot) return;
-  if (file.size > MAX_FILE_MB * 1024 * 1024) {
-    toast(`That file is over ${MAX_FILE_MB} MB. Trim it or use a compressed MP3.`);
-    return;
-  }
-  try {
-    const rec = await saveSound(slot, file);
-    await setCustomSound(slot, rec.data);
-    soundFiles[slot] = file.name;
-    renderSoundboard();
-    toast(`Loaded ${file.name}.`);
-  } catch (err) {
-    await removeSound(slot).catch(() => {});
-    toast(`Couldn't use that file: ${err.message || 'the browser could not decode it'}.`);
-  }
-});
-
-async function initSoundboard() {
-  updatePadsLive();
-  renderSoundboard();
-  try {
-    const all = await loadAllSounds();
-    for (const [slot, rec] of Object.entries(all)) {
-      try {
-        await setCustomSound(slot, rec.data);
-        soundFiles[slot] = rec.name;
-      } catch {
-        await removeSound(slot).catch(() => {});
-      }
-    }
-  } catch (err) {
-    sbError = `unavailable: ${err.message}`;
-  }
-  renderSoundboard();
-}
 
 /* ---------- boot ---------- */
 initSoundboard();
