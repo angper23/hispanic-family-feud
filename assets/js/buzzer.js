@@ -1,18 +1,20 @@
 // Buzzer page: two big buttons, one per face-off player. Both live on the same device, so the
 // order of the touches is decided locally and exactly: the first pointerdown wins, the other
-// button locks instantly. Only that single result is sent to the host.
+// button locks instantly. Only that single result is sent to the host (via a public MQTT broker).
 
-import { PREFIX, PEER_OPTIONS } from './remote.js?v=3';
+import { topics, connectBroker } from './remote.js?v=5';
 
 const $ = (id) => document.getElementById(id);
+const BUILD = 'v5';
+const MY_ID = Math.random().toString(36).slice(2, 10);
 
-let peer = null;
-let conn = null;
+let client = null;
 let room = null;
 let st = { armed: false, buzzed: null, names: ['Family 1', 'Family 2'], phase: null };
 let pressed = null; // team this device buzzed for, until the host says otherwise
-let connected = false;
-const BUILD = 'v4';
+let connected = false; // true while the host is answering
+let lastHeard = 0;
+let hb = null;
 const diagLog = [];
 function diag(msg) {
   diagLog.push(msg);
@@ -52,10 +54,12 @@ function render() {
   }
 }
 
+const sendUp = (msg) => client?.connected && client.publish(topics(room).up, JSON.stringify({ id: MY_ID, ...msg }), { qos: 1 });
+
 function press(team) {
   if (!connected || !st.armed || pressed != null) return; // first touch wins, instantly
   pressed = team;
-  conn.send({ type: 'buzz', team });
+  sendUp({ type: 'buzz', team });
   navigator.vibrate?.(60);
   render();
 }
@@ -69,10 +73,8 @@ btns.forEach((b, t) =>
 function onStatus(m) {
   const wasArmed = st.armed;
   st = m;
-  // Re-armed (host used Undo, or a new question): clear our local lock.
-  if (m.armed && !wasArmed) pressed = null;
-  // Host settled on a different team than we pressed (e.g. it buzzed in the same instant): trust the host.
-  if (m.buzzed != null) pressed = null;
+  if (m.armed && !wasArmed) pressed = null; // re-armed (Undo or a new question)
+  if (m.buzzed != null) pressed = null; // host has settled it: trust the host
   if (!m.armed && m.buzzed == null) pressed = null;
   render();
 }
@@ -80,59 +82,55 @@ function onStatus(m) {
 function join(code) {
   room = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (room.length !== 4) return ($('join-msg').textContent = 'Room codes are 4 characters.');
-  if (typeof window.Peer !== 'function') return ($('join-msg').textContent = 'Could not load PeerJS. Check your connection.');
+  if (!window.mqtt) return ($('join-msg').textContent = 'Could not load the messaging library. Check your connection.');
   $('join-msg').textContent = 'Connecting…';
   history.replaceState(null, '', `?room=${room}`);
-  peer?.destroy();
+  show('pad');
+  render();
   diag('contacting broker');
-  peer = new window.Peer(undefined, PEER_OPTIONS);
-  peer.on('open', () => {
-    diag('broker ok');
-    connect();
-  });
-  peer.on('error', (e) => {
-    diag(`error: ${e.type}`);
-    connected = false;
-    if (e.type === 'peer-unavailable') {
-      $('join-msg').textContent = `No room "${room}" found. Check the code on the host console.`;
+  clearInterval(hb);
+  client?.end(true);
+  connectBroker(
+    (c, url) => {
+      client = c;
+      diag(`broker ok (${new URL(url).hostname})`);
+      c.subscribe(topics(room).down, { qos: 1 });
+      c.on('message', (_t, buf) => {
+        try {
+          const m = JSON.parse(buf.toString());
+          if (m?.type !== 'status') return;
+          lastHeard = Date.now();
+          if (!connected) diag('host answered');
+          connected = true;
+          onStatus(m);
+        } catch {
+          /* ignore */
+        }
+      });
+      sendUp({ type: 'hello' });
+      diag(`asking host ${room}`);
+      hb = setInterval(() => {
+        sendUp({ type: 'hello' });
+        if (connected && Date.now() - lastHeard > 14000) {
+          connected = false;
+          pressed = null;
+          diag('host went quiet');
+          render();
+        }
+        if (!connected && Date.now() - lastHeard > 10000 && diagLog.length < 8) diag(`no answer from ${room}: check the code`);
+      }, 4000);
+    },
+    () => {
+      diag('broker unreachable');
+      $('join-msg').textContent = 'Could not reach the message service on this network. Try cellular data or another Wi-Fi.';
       show('join');
-    } else {
-      $('join-msg').textContent = `Connection problem: ${e.type}`;
-    }
-    render();
-  });
-  peer.on('disconnected', () => !peer.destroyed && peer.reconnect());
-}
-
-let retry = null;
-let slow = null;
-function connect() {
-  clearTimeout(retry);
-  conn = peer.connect(PREFIX + room, { reliable: true });
-  clearTimeout(slow);
-  slow = setTimeout(() => {
-    if (!connected) {
-      $('banner').textContent = 'Still connecting… the network may be blocking the link. Try Wi-Fi on both devices, or reload.';
-    }
-  }, 12000);
-  diag(`calling ${room}`);
-  conn.peerConnection?.addEventListener('iceconnectionstatechange', () => diag(`ice ${conn.peerConnection.iceConnectionState}`));
-  conn.on('open', () => {
-    diag('connected');
-    connected = true;
-    show('pad');
-    conn.send({ type: 'hello' });
-    render();
-  });
-  conn.on('data', (m) => m?.type === 'status' && onStatus(m));
-  const lost = () => {
-    connected = false;
-    pressed = null;
-    render();
-    retry = setTimeout(() => peer && !peer.destroyed && connect(), 1500);
-  };
-  conn.on('close', lost);
-  conn.on('error', lost);
+    },
+    () => {
+      connected = false;
+      diag('broker connection lost');
+      render();
+    },
+  );
 }
 
 $('join-form').addEventListener('submit', (e) => {
@@ -147,7 +145,5 @@ document.addEventListener('contextmenu', (e) => e.preventDefault());
 const q = new URLSearchParams(location.search).get('room');
 if (q) {
   $('code').value = q.toUpperCase();
-  show('pad');
-  render();
   join(q);
 } else show('join');

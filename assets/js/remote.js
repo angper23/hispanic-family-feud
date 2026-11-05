@@ -1,33 +1,53 @@
-// Host side of the remote buzzer. The host opens a PeerJS room (WebRTC, no server of ours);
-// the buzzer page (buzzer.html) joins it with the room code, usually on an iPad.
+// Host side of the remote buzzer. The host and the buzzer page meet on a public MQTT broker
+// over secure WebSocket, using the 4-character room code as the topic. No account or server of
+// ours is involved, and it works on networks that block direct device-to-device links.
 // The buzzer only sends "team N pressed"; all game rules still run in the host's engine.
 
+export const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no 0/O/1/I/L lookalikes
-export const PREFIX = 'hff-';
-
-/** STUN for direct links, plus a public TURN relay as a fallback for networks that block peer-to-peer. */
-export const PEER_OPTIONS = {
-  config: {
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun.cloudflare.com:3478' },
-      { urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turns:openrelay.metered.ca:443?transport=tcp'], username: 'openrelayproject', credential: 'openrelayproject' },
-    ],
-  },
-};
+export const topics = (code) => ({ up: `hff-sal/${code}/up`, down: `hff-sal/${code}/down` });
 
 const makeCode = () => Array.from({ length: 4 }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('');
+
+/** Connects to the first reachable broker. Calls onUp(client, url) or onFail(). */
+export function connectBroker(onUp, onFail, onDrop) {
+  let i = 0;
+  const tryNext = () => {
+    if (i >= BROKERS.length) return onFail();
+    const url = BROKERS[i++];
+    if (!window.mqtt) return onFail();
+    const client = window.mqtt.connect(url, { reconnectPeriod: 0, connectTimeout: 6000, clean: true });
+    let up = false;
+    client.on('connect', () => {
+      up = true;
+      client.removeAllListeners('close');
+      client.on('close', () => onDrop?.(client));
+      onUp(client, url);
+    });
+    const fail = () => {
+      if (up) return;
+      client.end(true);
+      tryNext();
+    };
+    client.once('error', fail);
+    client.once('close', fail);
+  };
+  tryNext();
+}
 
 /**
  * @param {{ getState: () => object, onBuzz: (team: number) => void, onChange: (info: object) => void }} opts
  */
 export function createRemote({ getState, onBuzz, onChange }) {
-  let peer = null;
+  let client = null;
   let code = null;
-  const conns = new Set();
   let error = null;
+  let open = false;
+  let timer = null;
+  const seen = new Map(); // buzzer id -> last time we heard from it
 
-  const info = () => ({ code, open: !!peer, count: conns.size, error });
+  const live = () => [...seen.values()].filter((t) => Date.now() - t < 12000).length;
+  const info = () => ({ code, open, count: live(), error });
 
   function status() {
     const s = getState();
@@ -42,65 +62,61 @@ export function createRemote({ getState, onBuzz, onChange }) {
     };
   }
 
+  const send = () => client?.connected && client.publish(topics(code).down, JSON.stringify(status()), { qos: 1 });
+
   /** Call after every state change. */
-  function push() {
-    if (!conns.size) return;
-    const msg = status();
-    conns.forEach((c) => c.open && c.send(msg));
-  }
+  const push = () => open && send();
 
-  function wire(conn) {
-    conn.on('open', () => {
-      conns.add(conn);
-      conn.send(status());
-      onChange(info());
-    });
-    conn.on('data', (m) => {
-      if (m?.type === 'buzz' && (m.team === 0 || m.team === 1)) onBuzz(m.team);
-      else if (m?.type === 'hello') conn.send(status());
-    });
-    const drop = () => {
-      conns.delete(conn);
-      onChange(info());
-    };
-    conn.on('close', drop);
-    conn.on('error', drop);
-  }
-
-  function start(attempt = 0) {
-    if (peer) return;
-    if (typeof window.Peer !== 'function') {
-      error = 'Could not load the PeerJS library (are you online?).';
+  function start() {
+    if (open || client) return;
+    if (!window.mqtt) {
+      error = 'Could not load the messaging library (are you online?).';
       return onChange(info());
     }
     code = makeCode();
-    const p = new window.Peer(PREFIX + code, PEER_OPTIONS);
-    peer = p;
     error = null;
-    p.on('open', () => onChange(info()));
-    p.on('connection', wire);
-    p.on('disconnected', () => {
-      if (!p.destroyed) p.reconnect();
-    });
-    p.on('error', (e) => {
-      if (e.type === 'unavailable-id' && attempt < 5) {
-        p.destroy();
-        peer = null;
-        return start(attempt + 1);
-      }
-      error = `Connection problem: ${e.type}`;
-      onChange(info());
-    });
     onChange(info());
+    connectBroker(
+      (c) => {
+        client = c;
+        open = true;
+        c.subscribe(topics(code).up, { qos: 1 });
+        c.on('message', (_t, buf) => {
+          let m;
+          try {
+            m = JSON.parse(buf.toString());
+          } catch {
+            return;
+          }
+          if (m?.id) seen.set(m.id, Date.now());
+          if (m?.type === 'buzz' && (m.team === 0 || m.team === 1)) onBuzz(m.team);
+          if (m?.type === 'hello' || m?.type === 'buzz') send();
+          onChange(info());
+        });
+        timer = setInterval(() => onChange(info()), 4000);
+        onChange(info());
+      },
+      () => {
+        error = 'Could not reach a message broker. Check the laptop’s internet connection.';
+        code = null;
+        onChange(info());
+      },
+      () => {
+        if (!open) return;
+        error = 'Lost the connection to the broker. Close the room and open it again.';
+        onChange(info());
+      },
+    );
   }
 
   function stop() {
-    conns.forEach((c) => c.close());
-    conns.clear();
-    peer?.destroy();
-    peer = null;
+    clearInterval(timer);
+    client?.end(true);
+    client = null;
+    open = false;
     code = null;
     error = null;
+    seen.clear();
     onChange(info());
   }
 
