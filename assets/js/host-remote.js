@@ -2,7 +2,7 @@
 
 import { buzzArmed } from './state.js';
 import { createRemote } from './remote.js';
-import { toast } from './ui.js';
+import { toast, confirmDialog } from './ui.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -38,7 +38,19 @@ export function initRemoteUI({ getState, dispatch }) {
     } else panel.hidden = !panel.hidden;
     $('btn-remote').setAttribute('aria-expanded', String(!panel.hidden));
   });
-  $('remote-stop').addEventListener('click', () => remote.stop());
+  // The X only hides the panel; the room keeps running. Closing the room needs a confirmation.
+  $('remote-hide').addEventListener('click', () => {
+    $('remote-panel').hidden = true;
+    $('btn-remote').setAttribute('aria-expanded', 'false');
+  });
+  $('remote-stop').addEventListener('click', async () => {
+    const ok = await confirmDialog({
+      title: 'Close the buzzer room?',
+      message: 'Connected phones will be disconnected, and opening it again gives a new code.',
+      confirmText: 'Close room',
+    });
+    if (ok) remote.stop();
+  });
   $('remote-copy').addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(remote.url());

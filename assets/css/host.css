@@ -227,3 +227,11 @@ textarea { resize: vertical; }
 .remote-code { font: 900 3rem var(--font-display); letter-spacing: .15em; text-align: center; color: var(--cream); }
 .remote-status { color: var(--lime); text-align: center; }
 .remote-panel .actions { display: flex; gap: 8px; justify-content: center; }
+
+.remote-panel { padding-top: 34px; }
+.remote-x {
+  position: absolute; top: 6px; right: 8px; width: 30px; height: 30px; border-radius: 50%;
+  border: 0; background: rgba(255, 255, 255, 0.12); color: var(--cream); font-size: 16px; cursor: pointer;
+}
+.remote-x:hover, .remote-x:focus-visible { background: rgba(255, 255, 255, 0.28); }
+.remote-note { font-size: 12px; opacity: 0.7; text-align: center; }
