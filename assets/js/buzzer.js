@@ -12,6 +12,12 @@ let room = null;
 let st = { armed: false, buzzed: null, names: ['Family 1', 'Family 2'], phase: null };
 let pressed = null; // team this device buzzed for, until the host says otherwise
 let connected = false;
+const BUILD = 'v4';
+const diagLog = [];
+function diag(msg) {
+  diagLog.push(msg);
+  $('diag').textContent = `${BUILD} · ` + diagLog.slice(-4).join(' → ');
+}
 
 const btns = [$('b0'), $('b1')];
 
@@ -78,9 +84,14 @@ function join(code) {
   $('join-msg').textContent = 'Connecting…';
   history.replaceState(null, '', `?room=${room}`);
   peer?.destroy();
+  diag('contacting broker');
   peer = new window.Peer(undefined, PEER_OPTIONS);
-  peer.on('open', connect);
+  peer.on('open', () => {
+    diag('broker ok');
+    connect();
+  });
   peer.on('error', (e) => {
+    diag(`error: ${e.type}`);
     connected = false;
     if (e.type === 'peer-unavailable') {
       $('join-msg').textContent = `No room "${room}" found. Check the code on the host console.`;
@@ -104,7 +115,10 @@ function connect() {
       $('banner').textContent = 'Still connecting… the network may be blocking the link. Try Wi-Fi on both devices, or reload.';
     }
   }, 12000);
+  diag(`calling ${room}`);
+  conn.peerConnection?.addEventListener('iceconnectionstatechange', () => diag(`ice ${conn.peerConnection.iceConnectionState}`));
   conn.on('open', () => {
+    diag('connected');
     connected = true;
     show('pad');
     conn.send({ type: 'hello' });

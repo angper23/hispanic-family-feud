@@ -42,4 +42,6 @@ html, body { height: 100%; margin: 0; }
 .bz:disabled { opacity: .35; }
 .bz.won { opacity: 1; outline: 6px solid var(--sun); }
 .bz.lost { opacity: .2; }
+/* tiny status line */
+.diag { position: fixed; bottom: 4px; left: 8px; right: 8px; margin: 0; font-size: 11px; color: #8d7aa8; text-align: center; pointer-events: none; }
 @media (orientation: portrait) { .buttons { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; } }
