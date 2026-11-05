@@ -12,6 +12,7 @@ It is a static site: plain HTML, CSS and JavaScript with no build step and no ba
 |------|-------------|--------------|
 | `index.html` | Audience, on the projector | The board, scores, bank, strikes, question and callouts. No controls. |
 | `host.html` | Host, on the laptop | Every control, plus every answer and point value, including hidden ones. |
+| `buzzer.html` | Face-off players, on a phone or iPad | Two big buttons, one per family. Joins the host with a room code. |
 | `editor.html` | Organizers | Add, edit, reorder, select and delete questions. Import and export JSON. |
 
 ## Run it locally
@@ -53,6 +54,24 @@ Both windows must run in the **same browser on the same computer**. They talk th
 - You are responsible for having the rights to any audio you load.
 
 **Refreshing is safe.** The game is saved in the browser after every action, so a refresh of either window picks up where it left off.
+
+## Remote buzzer
+
+For the face-off, the host can hand players a phone or iPad with two big buttons, one per family.
+
+1. On the host console, click **📱 Remote Buzzer**. A 4-character room code appears.
+2. On the phone or iPad, open `buzzer.html` (or tap **Copy link** on the host and send it) and enter the code.
+3. The buttons light up once the question is on screen and the face-off is waiting for a buzz. The first tap locks the other button, and the host registers that family exactly as if you had pressed `←` or `→`. **Undo** re-arms the buttons.
+
+How it works and what to know:
+
+- **Fair order.** Both buttons are on the same device, so that one device decides who touched first. Network delay isn't part of the comparison. Put both players on one device; with one device each, lag would decide close calls.
+- **Transport.** The host and buzzer meet on a free public MQTT broker (EMQX, with HiveMQ as backup) over secure WebSocket, using the room code as the topic. There is no account and no server of ours. It works on campus Wi-Fi, where a direct device-to-device (WebRTC) link did not.
+- **It needs the internet** on both devices, and the broker is a third-party service that could be down. The `←` / `→` keys always work as a fallback.
+- **The room is public.** Anyone who guessed the code could send a buzz. Codes are random and the only thing a buzz does is mark who was first.
+- **Reloading the host page closes the room** and gives a new code; **Close room** does the same.
+- **A small grey line** at the bottom of the buzzer page shows connection progress (`broker ok → host answered`). If a phone sticks on "Connecting to host…", read that line first. Open the page in a private tab if it looks stale (browsers cache scripts for about 10 minutes).
+- The host and projector display still need to be in the same browser on the same computer; only the buzzer travels over the network.
 
 ## Running the game
 
@@ -123,9 +142,9 @@ Optional fields: `"use": false` skips a question, and `"placeholder": true` mark
 ## Project layout
 
 ```
-index.html  host.html  editor.html  questions.json
+index.html  host.html  buzzer.html  editor.html  questions.json
 assets/css/   common, display, host, editor styles
-assets/js/    state.js (rules engine), sync.js, audio.js, questions.js,
+assets/js/    state.js (rules engine), sync.js, remote.js and buzzer.js (remote buzzer), audio.js, questions.js,
               display.js, host.js, editor.js, papel.js, confetti.js, ui.js,
               soundboard.js (host-loaded audio files, IndexedDB)
 tests/        engine.test.mjs
