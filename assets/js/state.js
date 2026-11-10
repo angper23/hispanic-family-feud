@@ -51,6 +51,7 @@ export function freshState(prev = null) {
     controlTeam: null,
     playIdx: 0,
     steal: null,
+    ad: false, // sponsor ad on the projector (only between games)
     timer: { end: null }, // answer timer: end = epoch ms while running, else null
     roundResult: null,
     log: [],
@@ -369,6 +370,16 @@ const handlers = {
     s.timer = { end: null };
   },
 
+  /** Sponsor ad: a full-screen picture on the projector, only between games. */
+  AD_SHOW(s) {
+    if (s.phase !== 'gameOver' && s.phase !== 'setup') return 'The ad can only play between games.';
+    s.ad = true;
+  },
+
+  AD_HIDE(s) {
+    s.ad = false;
+  },
+
   SET_TIMER_SECONDS(s, { seconds }) {
     s.settings.timerSeconds = clampInt(seconds, 3, 300, timerSeconds(s));
   },
@@ -461,7 +472,7 @@ const handlers = {
 
 /** Not recorded in the undo history. */
 // Timer controls and audio are not game moves, so Undo skips them.
-export const NON_UNDOABLE = new Set(['SET_AUDIO', 'TIMER_START', 'TIMER_STOP', 'SET_TIMER_SECONDS']);
+export const NON_UNDOABLE = new Set(['SET_AUDIO', 'TIMER_START', 'TIMER_STOP', 'SET_TIMER_SECONDS', 'AD_SHOW', 'AD_HIDE']);
 // Every other action (an answer, a strike, a new phase...) ends the turn, so it stops the timer.
 const KEEPS_TIMER = new Set(['TIMER_START', 'SET_AUDIO', 'SET_TIMER_SECONDS']);
 
@@ -477,6 +488,8 @@ export function apply(prev, action) {
   const err = h(s, action.payload ?? {}, fx);
   if (typeof err === 'string') return { error: err };
   if (!KEEPS_TIMER.has(action.type)) s.timer = { end: null };
+  // Any real move (starting the next game, undo...) ends the ad.
+  if (action.type !== 'AD_SHOW' && !NON_UNDOABLE.has(action.type)) s.ad = false;
   s.rev = prev.rev + 1;
   s.fx = { rev: s.rev, list: fx };
   return { state: s };

@@ -363,6 +363,7 @@ document.addEventListener('click', (e) => {
   if (btn.dataset.reveal != null) return handleAnswer(Number(btn.dataset.reveal));
   if (btn.id === 'btn-miss') return handleMiss();
   if (btn.id === 'btn-next-game') return startNextGame();
+  if (btn.id === 'btn-ad') return dispatch(state.ad ? 'AD_HIDE' : 'AD_SHOW');
   if (btn.dataset.qreset != null) {
     setNextIndex(0);
     return renderSetupQuestions();
@@ -610,7 +611,8 @@ function renderPhase() {
     case 'gameOver':
       html += `<h2>${s.winner == null ? "It's a tie!" : `${tname(s.winner)} wins!`}</h2>
         <div class="final">${s.teams.map((t, i) => `<div class="tcard t${i}"><div class="name">${esc(t.name)}</div><div class="score">${t.score}</div></div>`).join('')}</div>
-        <div class="actions"><button class="btn btn-gold btn-lg" id="btn-next-game">Next game · new questions</button></div>
+        <div class="actions"><button class="btn btn-gold btn-lg" id="btn-next-game">Next game · new questions</button>
+        <button class="btn btn-lg" id="btn-ad">${state.ad ? 'Hide ad' : 'Play ad'}</button></div>
         <p class="small">Same families and settings, scores back to zero.${nextUpHtml()}</p>
         ${resultsHtml()}
         <p class="small">Reset Game goes back to setup. Undo goes back into this game.</p>`;

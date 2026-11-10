@@ -386,6 +386,7 @@ function render(s, { fx = [], initial = false } = {}) {
   cur = s;
   const m = currentMultiplier(s);
 
+  $('d-ad').hidden = !s.ad;
   $('d-titlescreen').hidden = s.phase !== 'setup';
   $('d-round').textContent = s.phase === 'setup' ? '–' : s.round + 1;
   $('d-round-of').textContent = s.totalRounds ? `of ${s.totalRounds}` : '';

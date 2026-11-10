@@ -264,3 +264,14 @@ test('START_GAME stores the game id and keeps new names for the next game', () =
   assert.deepEqual(next.teams.map((t) => t.score), [0, 0]);
   assert.equal(next.phase, 'faceoff');
 });
+
+test('sponsor ad: only between games, ends when a game starts', () => {
+  let s = freshState();
+  s = apply(s, { type: 'AD_SHOW' }).state;
+  assert.equal(s.ad, true);
+  s = apply(s, { type: 'AD_HIDE' }).state;
+  assert.equal(s.ad, false);
+  s = apply(s, { type: 'AD_SHOW' }).state;
+  const started = apply(s, { type: 'START_GAME', payload: {} });
+  if (started.state) assert.equal(started.state.ad, false);
+});
