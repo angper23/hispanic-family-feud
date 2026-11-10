@@ -36,6 +36,8 @@ export function freshState(prev = null) {
     teams: [0, 1].map((i) => ({ name: defaultTeamName(i), captain: '', players: [], roster: [], score: 0 })),
     pool: [],
     qPtr: 0,
+    gameId: null, // set by the host at the start of each game; keys the record of results
+    qBase: 0, // where in the usable question list this game's pool starts (for the next game)
     round: 0,
     totalRounds: 0,
     question: null,
@@ -79,6 +81,12 @@ export const faceoffPlayer = (s, t) => rosterAt(s.teams[t], s.round + (s.faceoff
 export const playPlayer = (s) => (s.controlTeam == null ? '' : rosterAt(s.teams[s.controlTeam], s.playIdx));
 export const stealPlayer = (s) => (s.steal ? rosterAt(s.teams[s.steal.team], 0) : '');
 export const allRevealed = (s) => s.revealed.length > 0 && s.revealed.every(Boolean);
+/** Questions this game has used so far; the one on screen counts once it is shown or played. */
+export const questionsUsed = (s) => (s.phase === 'setup' || !s.pool?.length ? 0 : s.qPtr + (s.questionShown || s.phase !== 'faceoff' ? 1 : 0));
+
+/** Where the next game should start in the usable question list (wraps to the top when it runs out). */
+export const nextQuestionIndex = (s) => (s.pool?.length ? ((s.qBase || 0) + questionsUsed(s)) % s.pool.length : 0);
+
 export const isLastRound = (s) => s.round + 1 >= s.totalRounds || s.qPtr + 1 >= s.pool.length;
 
 export function parseMultipliers(text) {
@@ -227,6 +235,8 @@ const handlers = {
     });
     s.pool = pool;
     s.qPtr = 0;
+    s.qBase = clampInt(p.qBase, 0, 100000, 0);
+    s.gameId = p.gameId ? String(p.gameId) : null;
     s.round = 0;
     s.totalRounds = Math.min(s.settings.numRounds, pool.length);
     s.log = [];

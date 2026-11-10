@@ -103,6 +103,10 @@ The host console walks through each step and shows a hint under the answer butto
 | `1`–`6` with the Soundboard open, or `Shift`+`1`–`6` any time | Fire soundboard pad |
 | `Esc` | Stop all soundboard sounds |
 
+**Playing more than one game.** When a game ends, the host panel shows **Next game · new questions**. It opens a form with both families prefilled, so you can change names, captains and players (or leave them), then starts a fresh game with scores at zero. The new game carries on down the question list from where the last one stopped: if game 1 used questions 1 to 3, game 2 uses 4 to 6. A swapped-away question counts as used. When the list runs out it starts over from the top. The setup screen shows where the next game will start, with a **Start over from question 1** button. The position is saved in the browser.
+
+**Record of past games.** Each finished game's final scores and winner (or tie) are saved in the browser and listed under **Previous games** on the game-over panel and the setup screen. It survives refreshes, resets and new games, and **Clear record** empties it. Undoing back out of a finished game removes its entry.
+
 **Answer timer.** A timer card sits under the question on the host console. Press `T` (or **Start timer**) at any point in a game, for example right after asking the question, and the countdown appears in the ribbon at the bottom of the projector. It ticks in the last 5 seconds and plays the "Timer ends" sound at zero; the display then shows `TIME!` and the host decides what happens (usually `X`). Any game move you make (an answer, an `X`, `N`...) stops the timer, and pressing `T` again restarts it. **Stop** cancels it. The length is set on the setup screen (default 20 seconds), and the **Seconds** box on the timer card changes it mid-game. Timer controls are not part of Undo.
 
 **Undo** keeps a full history, so any mistake can be stepped back, including a whole round.

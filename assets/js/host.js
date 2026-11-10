@@ -9,6 +9,7 @@ import {
   apply,
   currentMultiplier,
   timerSeconds,
+  nextQuestionIndex,
   multiplierLabel,
   faceoffPlayer,
   playPlayer,
@@ -18,12 +19,14 @@ import {
   other,
 } from './state.js';
 import { publish, readState, onHello } from './sync.js';
+import { saveResult, removeResult, clearResults, resultFor, describeResult, loadResults, resultsHtml } from './results.js';
+import { askNextGameTeams } from './next-game.js';
 import { initRemoteUI } from './host-remote.js';
 import { padsLive, firePad, initSoundboard } from './host-soundboard.js';
 import { applyBranding, CONFIG } from './config.js';
 import { initAudio, setAudio, playFx, play, stopAll } from './audio.js';
 import { PAD_SLOTS } from './soundboard.js';
-import { loadQuestionBank, usableQuestions, isPlayable, BANK_KEY } from './questions.js';
+import { loadQuestionBank, usableQuestions, isPlayable, rotateFrom, getNextIndex, setNextIndex, BANK_KEY } from './questions.js';
 import { papelPicado } from './papel.js';
 import { confirmDialog, toast, esc, isDialogOpen } from './ui.js';
 
@@ -59,13 +62,22 @@ function saveHistory() {
   }
 }
 
+/** Keeps the record of finished games in step with the game state. */
+function recordResult(prev, next) {
+  if (next.phase === 'gameOver' && next.gameId) saveResult(resultFor(next));
+  // Undo back out of a finished game: it hasn't finished after all, so drop its entry.
+  else if (prev.phase === 'gameOver' && prev.gameId && next.gameId === prev.gameId) removeResult(prev.gameId);
+}
+
 function commit(next, { record = null } = {}) {
   if (record) {
     history.push(record);
     if (history.length > MAX_HISTORY) history.shift();
     saveHistory();
   }
+  recordResult(state, next);
   state = next;
+  if (state.phase !== 'setup') setNextIndex(nextQuestionIndex(state)); // the next game carries on down the list
   publish(state);
   render();
   remote.push();
@@ -224,24 +236,34 @@ function renderSetupQuestions() {
   const skipped = bank.questions.filter((q) => q.use && !isPlayable(q)).length;
   const placeholder = bank.questions.some((q) => q.placeholder && q.use);
   const src = bank.source === 'local' ? 'your Question Editor changes (saved in this browser)' : 'questions.json';
+  const ptr = usable.length ? getNextIndex() % usable.length : 0;
+  const ordered = rotateFrom(usable, ptr);
   let html = `<h3>Questions</h3><p class="small">Using <strong>${usable.length}</strong> question${usable.length === 1 ? '' : 's'} from ${src}.
     ${placeholder ? '<span class="tag">Placeholder sample set</span>' : ''}
     <a href="editor.html" target="_blank" rel="noopener" style="color:var(--sun)">Edit or reorder</a></p>`;
+  if (ptr > 0) {
+    html += `<p class="small">Earlier games used the first ${ptr}, so this game <strong>carries on from question ${ptr + 1}</strong>.
+      <button type="button" class="btn" data-qreset>Start over from question 1</button></p>`;
+    if (usable.length - ptr < rounds) html += `<p class="small warn">Only ${usable.length - ptr} unused question${usable.length - ptr === 1 ? '' : 's'} left, then the list starts over from the top.</p>`;
+  }
   if (skipped) html += `<p class="small warn">${skipped} selected question${skipped === 1 ? ' is' : 's are'} skipped because they need a question and at least 3 answers.</p>`;
   if (usable.length < rounds) html += `<p class="small warn">Only ${usable.length} usable questions for ${rounds} rounds. The game will end after ${usable.length}.</p>`;
   html += '<ol>';
-  usable.forEach((q, i) => {
+  ordered.forEach((q, i) => {
     const r = i < rounds;
     const m = mults[Math.min(i, mults.length - 1)];
-    html += `<li class="${r ? '' : 'spare'}">${r ? `<strong>R${i + 1} ×${m}</strong> · ` : 'Spare · '}${esc(q.question)}</li>`;
+    const num = (ptr + i) % usable.length;
+    html += `<li class="${r ? '' : 'spare'}">${r ? `<strong>R${i + 1} ×${m}</strong> · ` : 'Spare · '}${esc(q.question)}${ptr > 0 ? ` <span class="small">(#${num + 1})</span>` : ''}</li>`;
   });
-  el.innerHTML = html + '</ol>';
+  el.innerHTML = html + '</ol>' + resultsHtml();
 }
 
 form.addEventListener('submit', (e) => {
   e.preventDefault();
   const f = form.elements;
-  const pool = usableQuestions(bank.questions);
+  const all = usableQuestions(bank.questions);
+  const start = all.length ? getNextIndex() % all.length : 0;
+  const pool = rotateFrom(all, start);
   if (!pool.length) {
     toast(bank.error ? "Questions couldn't load. See the message above." : 'No usable questions. Add some in the Question Editor.');
     return;
@@ -251,8 +273,50 @@ form.addEventListener('submit', (e) => {
     teams: [0, 1].map((i) => ({ name: f[`name${i}`].value, captain: f[`captain${i}`].value, players: lines(f[`players${i}`].value) })),
     settings: { numRounds: f.numRounds.value, multipliers: parseMultipliers(f.multipliers.value), timerSeconds: f.timerSeconds.value },
     pool,
+    qBase: start,
+    gameId: newGameId(),
   });
 });
+
+const newGameId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+
+/** After a game: edit the families if you like, then start with scores reset and the next questions down the list. */
+async function startNextGame() {
+  const all = usableQuestions(bank.questions);
+  if (!all.length) return toast('No usable questions. Add some in the Question Editor.');
+  const last = loadResults().find((r) => r.id === state.gameId);
+  const teams = await askNextGameTeams(
+    state.teams.map((t) => ({ name: t.name, captain: t.captain, players: t.players })),
+    last ? `Last game: ${describeResult(last)}` : '',
+  );
+  if (!teams) return false;
+  // Keep the setup screen's saved names in step, so a later Reset starts from these families.
+  teams.forEach((t, i) => {
+    form.elements[`name${i}`].value = t.name;
+    form.elements[`captain${i}`].value = t.captain;
+    form.elements[`players${i}`].value = t.players.join('\n');
+  });
+  saveSetupDraft();
+  const start = getNextIndex() % all.length;
+  return dispatch('START_GAME', {
+    teams,
+    settings: { numRounds: state.settings.numRounds, multipliers: state.settings.multipliers, timerSeconds: timerSeconds(state) },
+    pool: rotateFrom(all, start),
+    qBase: start,
+    gameId: newGameId(),
+  });
+}
+
+async function clearRecord() {
+  const ok = await confirmDialog({
+    title: 'Clear the record of past games?',
+    message: 'This removes the list of winners from this browser. It cannot be undone.',
+    confirmText: 'Clear record',
+  });
+  if (!ok) return;
+  clearResults();
+  render();
+}
 
 /* ---------- game input ---------- */
 function handleAnswer(i) {
@@ -298,6 +362,12 @@ document.addEventListener('click', (e) => {
   if (!btn || btn.disabled) return;
   if (btn.dataset.reveal != null) return handleAnswer(Number(btn.dataset.reveal));
   if (btn.id === 'btn-miss') return handleMiss();
+  if (btn.id === 'btn-next-game') return startNextGame();
+  if (btn.dataset.qreset != null) {
+    setNextIndex(0);
+    return renderSetupQuestions();
+  }
+  if (btn.dataset.clearResults != null) return clearRecord();
   if (btn.dataset.act) {
     const payload = btn.dataset.team != null ? { team: Number(btn.dataset.team) } : undefined;
     return dispatch(btn.dataset.act, payload);
@@ -540,13 +610,24 @@ function renderPhase() {
     case 'gameOver':
       html += `<h2>${s.winner == null ? "It's a tie!" : `${tname(s.winner)} wins!`}</h2>
         <div class="final">${s.teams.map((t, i) => `<div class="tcard t${i}"><div class="name">${esc(t.name)}</div><div class="score">${t.score}</div></div>`).join('')}</div>
-        <p class="small">Use Reset Game to start over, or Undo to go back.</p>`;
+        <div class="actions"><button class="btn btn-gold btn-lg" id="btn-next-game">Next game · new questions</button></div>
+        <p class="small">Same families and settings, scores back to zero.${nextUpHtml()}</p>
+        ${resultsHtml()}
+        <p class="small">Reset Game goes back to setup. Undo goes back into this game.</p>`;
       break;
     default:
       break;
   }
   el.innerHTML = html;
   renderTimer();
+}
+
+/** "Next up: ..." line for the game-over panel: the first questions of the next game. */
+function nextUpHtml() {
+  const all = usableQuestions(bank.questions);
+  if (!all.length) return '';
+  const upcoming = rotateFrom(all, getNextIndex() % all.length).slice(0, Math.min(state.settings.numRounds, all.length));
+  return ` Next up: ${upcoming.map((q) => `<em>${esc(q.question)}</em>`).join(' · ')}`;
 }
 
 function renderTeams() {

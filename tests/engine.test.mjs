@@ -10,8 +10,11 @@ import {
   stealPlayer,
   multiplierFor,
   timerSeconds,
+  questionsUsed,
+  nextQuestionIndex,
 } from '../assets/js/state.js';
-import { parseQuestionFile, usableQuestions, questionIssues } from '../assets/js/questions.js';
+import { resultFor, describeResult } from '../assets/js/results.js';
+import { parseQuestionFile, usableQuestions, questionIssues, rotateFrom } from '../assets/js/questions.js';
 
 const file = JSON.parse(fs.readFileSync(new URL('../questions.json', import.meta.url)));
 const pool = usableQuestions(parseQuestionFile(file));
@@ -190,4 +193,74 @@ test('answer timer: starts in any phase, and old saved settings (stealSeconds) a
   assert.ok(s.timer.end);
   const old = { ...s, settings: { ...s.settings, timerSeconds: undefined, stealSeconds: 25 } };
   assert.equal(timerSeconds(old), 25);
+});
+
+test('rotateFrom carries on down a list and wraps to the top', () => {
+  assert.deepEqual(rotateFrom([1, 2, 3, 4, 5], 0), [1, 2, 3, 4, 5]);
+  assert.deepEqual(rotateFrom([1, 2, 3, 4, 5], 3), [4, 5, 1, 2, 3]);
+  assert.deepEqual(rotateFrom([1, 2, 3, 4, 5], 8), [4, 5, 1, 2, 3]); // past the end wraps
+  assert.deepEqual(rotateFrom([], 2), []);
+});
+
+test('next game starts after the questions this game used', () => {
+  const begin = (qBase, numRounds = 3) =>
+    run(freshState(), [
+      'START_GAME',
+      {
+        teams: [
+          { name: 'García', captain: 'Ana', players: ['Beto'] },
+          { name: 'López', captain: 'Diego', players: ['Eva'] },
+        ],
+        settings: { numRounds, multipliers: [1, 2, 3], timerSeconds: 20 },
+        pool: rotateFrom(pool, qBase),
+        qBase,
+      },
+    ]);
+  let s = begin(0);
+  assert.equal(questionsUsed(s), 0); // nothing used until the question is shown
+  assert.equal(nextQuestionIndex(s), 0);
+  s = run(s, ['REVEAL_QUESTION']);
+  assert.equal(nextQuestionIndex(s), 1);
+  s = run(s, ['END_GAME']); // a finished game counts the question it ended on
+  assert.equal(nextQuestionIndex(s), 1);
+
+  // a swapped-away question is skipped, not replayed in the next game
+  s = run(begin(0), ['SWAP_QUESTION'], ['REVEAL_QUESTION']);
+  assert.equal(nextQuestionIndex(s), 2);
+
+  // second game begins where the first stopped, and its own use is added on top
+  s = run(begin(3), ['REVEAL_QUESTION']);
+  assert.equal(s.question.question, pool[3].question);
+  assert.equal(nextQuestionIndex(s), 4);
+
+  // near the end of the list it wraps back to the first question
+  s = run(begin(pool.length - 1), ['REVEAL_QUESTION']);
+  assert.equal(s.question.question, pool[pool.length - 1].question);
+  assert.equal(nextQuestionIndex(s), 0);
+});
+
+test('record of finished games: winner, scores, and ties', () => {
+  let s = run(start(), ['REVEAL_QUESTION'], ['SET_SCORE', { team: 0, value: 245 }], ['SET_SCORE', { team: 1, value: 180 }], ['END_GAME']);
+  s = { ...s, gameId: 'g1' };
+  const r = resultFor(s);
+  assert.equal(r.id, 'g1');
+  assert.equal(describeResult(r), 'García 245 – 180 López · García won');
+  assert.equal(describeResult({ ...r, winner: null }), 'García 245 – 180 López · Tie');
+});
+
+test('START_GAME stores the game id and keeps new names for the next game', () => {
+  const s = run(start(), ['END_GAME']);
+  const next = run(s, [
+    'START_GAME',
+    {
+      teams: [{ name: 'Rivera', captain: 'Luz', players: ['Mo'] }, { name: 'Soto', captain: 'Cruz', players: [] }],
+      settings: { numRounds: 3, multipliers: [1, 2, 3], timerSeconds: 20 },
+      pool,
+      gameId: 'game-2',
+    },
+  ]);
+  assert.equal(next.gameId, 'game-2');
+  assert.deepEqual(next.teams.map((t) => t.name), ['Rivera', 'Soto']);
+  assert.deepEqual(next.teams.map((t) => t.score), [0, 0]);
+  assert.equal(next.phase, 'faceoff');
 });

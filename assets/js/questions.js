@@ -80,6 +80,30 @@ export function questionIssues(q) {
 
 export const isPlayable = (q) => !!q.question.trim() && q.answers.filter((a) => a.text.trim()).length >= 3;
 
+/** The list starting at `start` and wrapping around, so a later game can carry on down the list. */
+export const rotateFrom = (list, start) => {
+  if (!list.length) return [];
+  const n = ((Math.floor(start) % list.length) + list.length) % list.length;
+  return [...list.slice(n), ...list.slice(0, n)];
+};
+
+/* Which question the next game starts at. Saved in this browser so it survives refreshes. */
+export const NEXT_KEY = 'hff:nextQuestion:v1';
+export function getNextIndex() {
+  try {
+    return Math.max(0, Math.floor(Number(localStorage.getItem(NEXT_KEY))) || 0);
+  } catch {
+    return 0;
+  }
+}
+export function setNextIndex(n) {
+  try {
+    localStorage.setItem(NEXT_KEY, String(Math.max(0, Math.floor(n) || 0)));
+  } catch {
+    /* storage unavailable: the next game just starts from the top */
+  }
+}
+
 /** The questions a game will use, in order, cleaned and sorted. */
 export function usableQuestions(list) {
   return list

@@ -241,3 +241,18 @@ textarea { resize: vertical; }
 }
 .remote-x:hover, .remote-x:focus-visible { background: rgba(255, 255, 255, 0.28); }
 .remote-note { font-size: 12px; opacity: 0.7; text-align: center; }
+
+/* Record of past games + next-game form */
+.results { margin-top: 14px; }
+.results h3 { margin: 0 0 6px; }
+.results ol { margin: 0 0 8px; padding-left: 22px; }
+.results li { margin: 3px 0; }
+dialog.next-game { max-width: min(640px, calc(100vw - 32px)); }
+.ng-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.ng-team { border: 2px solid rgba(255, 255, 255, 0.2); border-radius: 12px; padding: 8px 12px 12px; min-width: 0; }
+.ng-team.t0 { border-color: var(--magenta); }
+.ng-team.t1 { border-color: var(--turquoise); }
+.ng-team legend { font-weight: 800; padding: 0 6px; }
+.ng-team label { display: block; font-size: 13px; margin-top: 8px; }
+.ng-team input, .ng-team textarea { width: 100%; box-sizing: border-box; margin-top: 3px; }
+@media (max-width: 560px) { .ng-teams { grid-template-columns: 1fr; } }
