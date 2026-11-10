@@ -13,7 +13,7 @@ export const EVENT_SLOTS = [
   { slot: 'fanfare', label: 'Round win / game start' },
   { slot: 'bigFanfare', label: 'Winner screen' },
   { slot: 'flip', label: 'Reveal remaining (no points)' },
-  { slot: 'timeUp', label: 'Huddle timer ends' },
+  { slot: 'timeUp', label: 'Timer ends' },
 ];
 
 /** Free pads the host can fire any time (intro music, applause, ...). */

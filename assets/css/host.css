@@ -134,6 +134,12 @@ textarea { resize: vertical; }
 .phase-panel ul.attempts { margin: 0 0 10px; padding-left: 18px; font-size: 14px; }
 .timer-big { font: 400 46px/1 var(--font-display); color: var(--sun); text-align: center; margin: 4px 0 10px; }
 .timer-big.low { color: #ff6b78; }
+.timer-big.up { color: #fff; background: var(--red); border-radius: 12px; padding: 4px 0; }
+.timer-card { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.timer-card .timer-big { margin: 0; min-width: 190px; font-size: 54px; }
+.timer-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.timer-len { display: flex; align-items: center; gap: 6px; font-size: 13px; opacity: 0.9; }
+.timer-len input { width: 4.5em; }
 
 /* Teams */
 .teams { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }

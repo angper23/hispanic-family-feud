@@ -84,7 +84,8 @@
             <label>Main rounds <input type="number" name="numRounds" min="1" max="50" value="4"></label>
             <label>Multipliers by round <input name="multipliers" value="1, 2, 3, 3">
               <small>Comma-separated, Round 1 first. The last value repeats for later rounds.</small></label>
-            <label>Steal huddle timer (seconds) <input type="number" name="stealSeconds" min="3" max="300" value="20"></label>
+            <label>Answer timer (seconds) <input type="number" name="timerSeconds" min="3" max="300" value="20">
+              <small>How long a player gets per turn. The host starts it with <kbd>T</kbd> and can change it during the game.</small></label>
           </fieldset>
         </div>
         <div class="card setup-questions" id="setup-questions">Loading questions…</div>
@@ -101,6 +102,14 @@
         <div class="col-board">
           <div class="card round-bar" id="round-bar"></div>
           <div class="card question-box" id="question-box"></div>
+          <div class="card timer-card" id="timer-card">
+            <div class="timer-big" id="timer-readout" aria-live="off">0:20</div>
+            <div class="timer-controls">
+              <button class="btn btn-gold" id="btn-timer-start" type="button">Start timer <kbd>T</kbd></button>
+              <button class="btn" id="btn-timer-stop" type="button" disabled>Stop</button>
+              <label class="timer-len">Seconds <input type="number" id="timer-seconds" min="3" max="300" value="20" aria-label="Answer timer length in seconds"></label>
+            </div>
+          </div>
           <div class="answers" id="answers"></div>
           <button id="btn-miss" class="btn btn-strike">✕ Not on board <kbd>X</kbd></button>
           <p class="click-hint" id="click-hint"></p>
@@ -142,7 +151,7 @@
               <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Left / right family buzzed first</dd>
               <dt><kbd>P</kbd> <kbd>O</kbd></dt><dd>Play / pass</dd>
               <dt><kbd>S</kbd></dt><dd>Start steal</dd>
-              <dt><kbd>T</kbd></dt><dd>Start huddle timer</dd>
+              <dt><kbd>T</kbd></dt><dd>Start (or restart) the answer timer</dd>
               <dt><kbd>R</kbd></dt><dd>Reveal remaining answers</dd>
               <dt><kbd>N</kbd></dt><dd>Next round</dd>
               <dt><kbd>U</kbd></dt><dd>Undo</dd>

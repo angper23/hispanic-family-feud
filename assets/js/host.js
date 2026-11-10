@@ -8,6 +8,7 @@ import {
   freshState,
   apply,
   currentMultiplier,
+  timerSeconds,
   multiplierLabel,
   faceoffPlayer,
   playPlayer,
@@ -92,6 +93,7 @@ function undo() {
   const rev = state.rev + 1;
   const restored = {
     ...prev,
+    timer: { end: null }, // a timer from the past would just read "Time's up!"
     settings: { ...prev.settings, volume: state.settings.volume, muted: state.settings.muted },
     rev,
     fx: { rev, list: [{ t: 'undo' }] },
@@ -167,13 +169,14 @@ $('btn-endgame').addEventListener('click', async () => {
 
 /* ---------- setup ---------- */
 const form = $('setup-form');
-const SETUP_FIELDS = ['name0', 'captain0', 'players0', 'name1', 'captain1', 'players1', 'numRounds', 'multipliers', 'stealSeconds'];
+const SETUP_FIELDS = ['name0', 'captain0', 'players0', 'name1', 'captain1', 'players1', 'numRounds', 'multipliers', 'timerSeconds'];
 
 function loadSetupDraft() {
   try {
     const d = JSON.parse(localStorage.getItem(SETUP_KEY) || '{}');
     SETUP_FIELDS.forEach((f) => {
-      if (d[f] != null) form.elements[f].value = d[f];
+      const v = f === 'timerSeconds' ? (d[f] ?? d.stealSeconds) : d[f]; // older drafts used stealSeconds
+      if (v != null) form.elements[f].value = v;
     });
   } catch {
     /* ignore */
@@ -246,7 +249,7 @@ form.addEventListener('submit', (e) => {
   saveSetupDraft();
   dispatch('START_GAME', {
     teams: [0, 1].map((i) => ({ name: f[`name${i}`].value, captain: f[`captain${i}`].value, players: lines(f[`players${i}`].value) })),
-    settings: { numRounds: f.numRounds.value, multipliers: parseMultipliers(f.multipliers.value), stealSeconds: f.stealSeconds.value },
+    settings: { numRounds: f.numRounds.value, multipliers: parseMultipliers(f.multipliers.value), timerSeconds: f.timerSeconds.value },
     pool,
   });
 });
@@ -361,7 +364,7 @@ document.addEventListener('keydown', (e) => {
   else if (k === 'o') dispatch('PASS');
   else if (k === 'n') dispatch('NEXT_ROUND');
   else if (k === 'q') dispatch('REVEAL_QUESTION');
-  else if (k === 't') dispatch('STEAL_TIMER_START');
+  else if (k === 't') dispatch('TIMER_START');
   else if (k === 'r') dispatch('REVEAL_REMAINING');
   else if (k === 'ArrowLeft') dispatch('BUZZ', { team: 0 });
   else if (k === 'ArrowRight') dispatch('BUZZ', { team: 1 });
@@ -522,10 +525,7 @@ function renderPhase() {
     case 'steal':
       html += `<h2>STEAL! ${tname(s.steal.team)} huddles</h2>
         <p>Captain <strong>${esc(stealPlayer(s))}</strong> gives one answer for the whole bank of <strong>${s.bank}</strong>.</p>
-        <div class="timer-big" id="host-timer">${s.steal.timerSkipped ? 'Timer skipped' : `0:${String(s.settings.stealSeconds).padStart(2, '0')}`}</div>
-        <div class="actions"><button class="btn btn-gold" data-act="STEAL_TIMER_START">${s.steal.timerEnd ? 'Restart' : 'Start'} ${s.settings.stealSeconds}s timer <kbd>T</kbd></button>
-        <button class="btn" data-act="STEAL_TIMER_SKIP">Skip timer</button></div>
-        <p class="small">On the board: the bank goes to ${tname(s.steal.team)}. Miss: it goes to ${tname(s.controlTeam)}.</p>`;
+        <p class="small">On the board: the bank goes to ${tname(s.steal.team)}. Miss: it goes to ${tname(s.controlTeam)}. Press <kbd>T</kbd> to start the answer timer.</p>`;
       break;
     case 'roundEnd': {
       const r = s.roundResult;
@@ -546,7 +546,7 @@ function renderPhase() {
       break;
   }
   el.innerHTML = html;
-  tickHostTimer();
+  renderTimer();
 }
 
 function renderTeams() {
@@ -601,21 +601,34 @@ function renderLog() {
     .join(' · ') || 'none'}</p>`;
 }
 
-/* ---------- steal timer (host side plays the ticks) ---------- */
+/* ---------- answer timer (host side shows the clock and plays the ticks) ---------- */
 let lastTickSec = null;
 let firedEnd = null;
+const clock = (n) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
+
+/** Static parts of the timer card: button labels and the length box. */
+function renderTimer() {
+  const secs = timerSeconds(state);
+  const running = !!state.timer?.end;
+  $('btn-timer-start').innerHTML = `${running ? 'Restart' : 'Start'} ${secs}s timer <kbd>T</kbd>`;
+  $('btn-timer-stop').disabled = !running;
+  if (document.activeElement !== $('timer-seconds')) $('timer-seconds').value = secs;
+  tickHostTimer();
+}
+
 function tickHostTimer() {
-  const el = $('host-timer');
-  const end = state.phase === 'steal' ? state.steal?.timerEnd : null;
+  const el = $('timer-readout');
+  const end = state.timer?.end ?? null;
   if (!end) {
     lastTickSec = null;
+    el.textContent = clock(timerSeconds(state));
+    el.classList.remove('low', 'up');
     return;
   }
   const left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
-  if (el) {
-    el.textContent = left > 0 ? `0:${String(left).padStart(2, '0')}` : "Time's up!";
-    el.classList.toggle('low', left <= 5);
-  }
+  el.textContent = left > 0 ? clock(left) : "Time's up!";
+  el.classList.toggle('low', left <= 5);
+  el.classList.toggle('up', left === 0);
   if (left !== lastTickSec) {
     if (left > 0 && left <= 5 && lastTickSec != null) play('tick');
     if (left === 0 && firedEnd !== end) {
@@ -626,6 +639,10 @@ function tickHostTimer() {
   }
 }
 setInterval(tickHostTimer, 200);
+
+$('btn-timer-start').addEventListener('click', () => dispatch('TIMER_START'));
+$('btn-timer-stop').addEventListener('click', () => dispatch('TIMER_STOP'));
+$('timer-seconds').addEventListener('change', (e) => dispatch('SET_TIMER_SECONDS', { seconds: e.target.value }));
 
 /* ---------- boot ---------- */
 initSoundboard();

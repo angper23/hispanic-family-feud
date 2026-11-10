@@ -274,7 +274,7 @@ function renderRibbon(s) {
 
 function tickTimer() {
   const el = $('d-timer');
-  const end = cur?.phase === 'steal' ? cur.steal?.timerEnd : null;
+  const end = cur?.timer?.end ?? null;
   if (!end) {
     el.hidden = true;
     return;

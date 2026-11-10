@@ -95,13 +95,15 @@ The host console walks through each step and shows a hint under the answer butto
 | `X` | Not on board / strike / steal fails |
 | `P` / `O` | Play / pass |
 | `S` | Start the steal early |
-| `T` | Start the huddle timer |
+| `T` | Start (or restart) the answer timer |
 | `R` | Reveal remaining answers (no points) |
 | `N` | Next round, or the winner screen after the last round |
 | `U` or `Ctrl/Cmd+Z` | Undo |
 | `M` | Mute |
 | `1`–`6` with the Soundboard open, or `Shift`+`1`–`6` any time | Fire soundboard pad |
 | `Esc` | Stop all soundboard sounds |
+
+**Answer timer.** A timer card sits under the question on the host console. Press `T` (or **Start timer**) at any point in a game, for example right after asking the question, and the countdown appears in the ribbon at the bottom of the projector. It ticks in the last 5 seconds and plays the "Timer ends" sound at zero; the display then shows `TIME!` and the host decides what happens (usually `X`). Any game move you make (an answer, an `X`, `N`...) stops the timer, and pressing `T` again restarts it. **Stop** cancels it. The length is set on the setup screen (default 20 seconds), and the **Seconds** box on the timer card changes it mid-game. Timer controls are not part of Undo.
 
 **Undo** keeps a full history, so any mistake can be stepped back, including a whole round.
 
@@ -115,7 +117,7 @@ The host console walks through each step and shows a hint under the answer butto
 - **Play or pass.** The face-off winner picks. The playing family goes down the line, one answer per player.
 - **Points.** Each revealed answer adds its points times the round multiplier to the bank. Defaults are ×1, ×2, ×3, then ×3 for every later round. Change them on the setup screen.
 - **Clearing the board** before 3 strikes wins the bank.
-- **The steal.** On the 3rd strike the other family huddles (an optional 20-second timer) and their captain gives one answer. On the board: they win the whole bank plus that answer. Not on board: one X, and the bank goes to the playing family.
+- **The steal.** On the 3rd strike the other family huddles and their captain gives one answer. On the board: they win the whole bank plus that answer. Not on board: one X, and the bank goes to the playing family.
 - **After the round**, Reveal Remaining flips the leftover tiles with no points.
 - **After the final round**, the display shows the winner with confetti.
 

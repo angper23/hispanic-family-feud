@@ -9,10 +9,13 @@ export const MAX_ANSWERS = 8;
 export const DEFAULT_SETTINGS = Object.freeze({
   numRounds: 4,
   multipliers: Object.freeze([1, 2, 3, 3]),
-  stealSeconds: 20,
+  timerSeconds: 20, // length of the host's answer timer
   volume: 0.7,
   muted: false,
 });
+
+/** Timer length in seconds. Falls back to the old setting name so saved games keep working. */
+export const timerSeconds = (s) => s.settings?.timerSeconds ?? s.settings?.stealSeconds ?? DEFAULT_SETTINGS.timerSeconds;
 
 export const defaultTeamName = (i) => (i === 0 ? 'Family A' : 'Family B');
 export const other = (t) => (t === 0 ? 1 : 0);
@@ -46,6 +49,7 @@ export function freshState(prev = null) {
     controlTeam: null,
     playIdx: 0,
     steal: null,
+    timer: { end: null }, // answer timer: end = epoch ms while running, else null
     roundResult: null,
     log: [],
     winner: null,
@@ -166,14 +170,13 @@ function endRound(s, team, how, fx, delay = 0) {
   s.roundResult = { team, award, how };
   s.log.push({ round: s.round + 1, question: s.question.question, team, award, how, mult: currentMultiplier(s) });
   s.bank = 0;
-  if (s.steal) s.steal.timerEnd = null;
   s.phase = 'roundEnd';
   fx.push({ t: 'roundWin', team, award, how, delay });
 }
 
 function enterSteal(s, fx, delay) {
   s.phase = 'steal';
-  s.steal = { team: other(s.controlTeam), timerEnd: null, timerSkipped: false, result: null };
+  s.steal = { team: other(s.controlTeam), result: null };
   fx.push({ t: 'steal', team: s.steal.team, delay });
 }
 
@@ -213,7 +216,8 @@ const handlers = {
       Array.isArray(st.multipliers) && st.multipliers.length
         ? st.multipliers.map((m) => clampInt(m, 1, 99, 1))
         : [...DEFAULT_SETTINGS.multipliers];
-    s.settings.stealSeconds = clampInt(st.stealSeconds, 3, 300, DEFAULT_SETTINGS.stealSeconds);
+    s.settings.timerSeconds = clampInt(st.timerSeconds ?? st.stealSeconds, 3, 300, DEFAULT_SETTINGS.timerSeconds);
+    s.timer = { end: null };
     s.teams = [0, 1].map((i) => {
       const t = p.teams?.[i] ?? {};
       const name = String(t.name ?? '').trim() || defaultTeamName(i);
@@ -343,17 +347,20 @@ const handlers = {
     enterSteal(s, fx, 0);
   },
 
-  STEAL_TIMER_START(s, p, fx) {
-    if (s.phase !== 'steal') return 'The huddle timer is only for the steal.';
-    s.steal.timerEnd = Date.now() + s.settings.stealSeconds * 1000;
-    s.steal.timerSkipped = false;
+  /** Answer timer: the host starts it any time during a game (T); starting again restarts it. */
+  TIMER_START(s, p, fx) {
+    if (s.phase === 'setup') return 'Start the game first.';
+    if (s.phase === 'gameOver') return 'The game is over.';
+    s.timer = { end: Date.now() + timerSeconds(s) * 1000 };
     fx.push({ t: 'timerStart' });
   },
 
-  STEAL_TIMER_SKIP(s) {
-    if (s.phase !== 'steal') return 'The huddle timer is only for the steal.';
-    s.steal.timerEnd = null;
-    s.steal.timerSkipped = true;
+  TIMER_STOP(s) {
+    s.timer = { end: null };
+  },
+
+  SET_TIMER_SECONDS(s, { seconds }) {
+    s.settings.timerSeconds = clampInt(seconds, 3, 300, timerSeconds(s));
   },
 
   STEAL_ANSWER(s, { idx }, fx) {
@@ -443,7 +450,10 @@ const handlers = {
 };
 
 /** Not recorded in the undo history. */
-export const NON_UNDOABLE = new Set(['SET_AUDIO']);
+// Timer controls and audio are not game moves, so Undo skips them.
+export const NON_UNDOABLE = new Set(['SET_AUDIO', 'TIMER_START', 'TIMER_STOP', 'SET_TIMER_SECONDS']);
+// Every other action (an answer, a strike, a new phase...) ends the turn, so it stops the timer.
+const KEEPS_TIMER = new Set(['TIMER_START', 'SET_AUDIO', 'SET_TIMER_SECONDS']);
 
 /**
  * Applies an action. Returns { state } on success or { error } with a host-facing message.
@@ -456,6 +466,7 @@ export function apply(prev, action) {
   const fx = [];
   const err = h(s, action.payload ?? {}, fx);
   if (typeof err === 'string') return { error: err };
+  if (!KEEPS_TIMER.has(action.type)) s.timer = { end: null };
   s.rev = prev.rev + 1;
   s.fx = { rev: s.rev, list: fx };
   return { state: s };

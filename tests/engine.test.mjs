@@ -9,6 +9,7 @@ import {
   playPlayer,
   stealPlayer,
   multiplierFor,
+  timerSeconds,
 } from '../assets/js/state.js';
 import { parseQuestionFile, usableQuestions, questionIssues } from '../assets/js/questions.js';
 
@@ -31,7 +32,7 @@ const start = (opts = {}) =>
         { name: 'García', captain: 'Ana', players: ['Beto', 'Carla'] },
         { name: 'López', captain: 'Diego', players: ['Eva'] },
       ],
-      settings: { numRounds: 4, multipliers: [1, 2, 3, 3], stealSeconds: 20, ...opts },
+      settings: { numRounds: 4, multipliers: [1, 2, 3, 3], timerSeconds: 20, ...opts },
       pool,
     },
   ]);
@@ -158,4 +159,35 @@ test('swap question uses a spare before answers are given', () => {
   const s = run(start(), ['SWAP_QUESTION']);
   assert.equal(s.question.id, pool[1].id);
   assert.equal(s.round, 0);
+});
+
+test('answer timer: starts any time in a game, uses the set length, and a game move stops it', () => {
+  assert.ok(apply(freshState(), { type: 'TIMER_START' }).error); // not before the game starts
+  let s = start({ timerSeconds: 30 });
+  assert.equal(s.settings.timerSeconds, 30);
+  const t0 = Date.now();
+  s = run(s, ['REVEAL_QUESTION'], ['TIMER_START']);
+  assert.ok(s.timer.end >= t0 + 29_000 && s.timer.end <= Date.now() + 30_000);
+  s = run(s, ['TIMER_START']); // restart is fine
+  assert.ok(s.timer.end);
+  s = run(s, ['BUZZ', { team: 0 }]); // any game move ends the turn
+  assert.equal(s.timer.end, null);
+});
+
+test('answer timer: stop, change length, and audio changes leave it alone', () => {
+  let s = run(start(), ['REVEAL_QUESTION'], ['TIMER_START']);
+  s = run(s, ['SET_AUDIO', { volume: 0.5 }], ['SET_TIMER_SECONDS', { seconds: 45 }]);
+  assert.ok(s.timer.end, 'still running');
+  assert.equal(s.settings.timerSeconds, 45);
+  s = run(s, ['TIMER_STOP']);
+  assert.equal(s.timer.end, null);
+  s = run(s, ['SET_TIMER_SECONDS', { seconds: 9999 }]);
+  assert.equal(s.settings.timerSeconds, 300); // clamped
+});
+
+test('answer timer: starts in any phase, and old saved settings (stealSeconds) are still read', () => {
+  const s = run(start(), ['TIMER_START']);
+  assert.ok(s.timer.end);
+  const old = { ...s, settings: { ...s.settings, timerSeconds: undefined, stealSeconds: 25 } };
+  assert.equal(timerSeconds(old), 25);
 });
